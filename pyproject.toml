@@ -1,7 +1,7 @@
 [project]
 name = "seminario-grupo5"
 version = "0.1.0"
-description = "Add your description here"
+description = "Proyecto para el seminario, grupo 5 para el análisis Comparativo del Sistema Bancario Ecuatoriano."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
