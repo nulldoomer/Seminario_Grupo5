@@ -48,14 +48,16 @@ desarrollo.
 
 ## Dependencias
 
-Para actualizar las dependencias del proyecto usamos lo siguiente en la terminal
+- Para actualizar las dependencias del proyecto usamos lo siguiente en la 
+terminal.
 
 ```cmd
   uv sync
 ```
 
-Creara el entorno virtual automaticamente e instalara todas las dependencias que
-esten establecidas en el proyecto.
+> [!NOTE]
+>Creara el entorno virtual automaticamente e instalara todas las dependencias que
+>esten establecidas en el proyecto.
 
 ## Ejecución
 
