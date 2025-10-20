@@ -67,6 +67,10 @@ Para correr un script en especifico se usa:
   uv run nombre_archivo
 ```
 
+> [!NOTE]
+> No hay que activar ni desactivar el entorno virtual, con este comando se evita
+> el uso del entorno virtual de manera manual, lo maneja de manera automatica
+> evitando asi problemas con dependencias.
 ---
 
 
