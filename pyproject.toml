@@ -1,7 +1,9 @@
 [project]
 name = "seminario-grupo5"
 version = "0.1.0"
-description = "Proyecto para el seminario, grupo 5 para el análisis Comparativo del Sistema Bancario Ecuatoriano."
+description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "pandas>=2.3.3",
+]
