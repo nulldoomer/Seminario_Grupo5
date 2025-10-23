@@ -105,3 +105,10 @@ proceso con nuevos archivos de Excel correspondientes a otros periodos.
 
 
 ![Arquitectura Data Pipeline](doc/images/arquitectura_data_pipeline.png)
+
+El pipeline fue diseñado utilizando programación orientada a objetos (OOP), lo 
+que permitió separar las responsabilidades de cada proceso. Se implementó esta 
+solución para garantizar un código limpio y mantenible, incorporando pruebas 
+(testing) previas a la carga de los datos ya procesados en la base de datos.
+
+![Arquitectura Data Pipeline](doc/images/diagrama_clases.png)
