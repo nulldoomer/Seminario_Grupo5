@@ -37,8 +37,13 @@ class CreateDataframes:
                 dataframe_composcart_ptj, dataframe_indicadores)
 
 
+# We inherit from BaseEstimator and TransformerMixin to make this class 
+# compatible with sklearn Pipelines. These base classes ensure that our custom 
+# transformer implements the required fit() and transform() methods,
+# allowing sklearn to call fit_transform() and integrate this step seamlessly 
+# into a data processing workflow.
 
-class DataCleaning(BaseEstimator, TransformerMixin):
+class DropBlankColumn(BaseEstimator, TransformerMixin):
 
     def fit(self, X: pd.DataFrame, y= None):
 
@@ -46,6 +51,7 @@ class DataCleaning(BaseEstimator, TransformerMixin):
 
 
     def transform(self, X: pd.DataFrame):
+
         # Drop the blank column which is in all the dataframes
         # axis specifies that is a column and inplace mute the same object
         # also use errors=ignore to avoid exceptions if the column doesn't 
@@ -57,8 +63,30 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         X = X.copy()
 
         X.drop("BANCOS PRIVADOS VIVIENDA", axis=1, inplace=True,
-                       errors="ignore")
+               errors="ignore")
 
         return X 
 
 
+
+class DropRowsWithoutValues(BaseEstimator, TransformerMixin):
+
+    def fit(self, X: pd.DataFrame, y=None):
+
+        return self
+
+    def transform(self, X: pd.DataFrame):
+
+        X = X.copy()
+
+        # Drop the rows that have the definition and name, but it doesn't 
+        # have values at all on the banks columns
+        # We'll be looking to rows with 3 values at most to keep, because the
+        # ones that only has the 2 are the ones without bank values
+
+        # Also drops all the rows that doesn't have at least one value, which 
+        # is totally usefull because we don't want blank insertions in our db
+        
+        X.dropna(thresh=3, inplace=True)
+
+        return X
