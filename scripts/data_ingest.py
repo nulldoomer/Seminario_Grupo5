@@ -12,7 +12,6 @@ class DataIngester:
                                 f"{dataset_name}.xlsx")
 
         # Check if the file exist, if it doesn't throw an exception with raise
-
         if not os.path.exists(data_path):
             raise FileNotFoundError(f"No se encontro el archivo {data_path}")
 
