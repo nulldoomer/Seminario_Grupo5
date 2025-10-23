@@ -73,5 +73,24 @@ Para correr un script en especifico se usa:
 > el uso del entorno virtual de manera manual, lo maneja de manera automatica
 > evitando asi problemas con dependencias.
 ---
+# Guia del Proyecto (En deploy)
+
+---
+
+# Documentación
+
+## Análisis del Dataset 
 
 
+![Análisis general del Excel](./doc/images/Analisis general del excel.png)
+
+
+![Análisis Balance y Balance%](./doc/images/Analisis balance y balance%.png)
+
+
+![Análisis Compos carty Compos cart%](./doc/images/Analisis compos cart y compos cart%.png)
+
+
+![Análisis Indicadores](./doc/images/Analisis Indicadores.png)
+
+--- 
