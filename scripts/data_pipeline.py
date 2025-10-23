@@ -1,14 +1,18 @@
 from sklearn.pipeline import Pipeline
-from data_processing import  DataCleaning
+from data_processing import  DropBlankColumn, DropRowsWithoutValues
 
-class BancosPipeLine:
+class CleaningPipeline:
 
-    def run(self, dataframe):
+    def clean(self, dataframe):
         
-        banco_pipe = Pipeline([
-            ("cleaner", DataCleaning())
+        # Execute the process in sequence, obtain the result from one process
+        # and use that result to continue with the other one
+
+        cleaning_pipe= Pipeline([
+            ("blank_column_dropper", DropBlankColumn()),
+            ("row_dropper", DropRowsWithoutValues())
         ])
 
-        tf = banco_pipe.fit_transform(dataframe)
+        transformed_dataframe = cleaning_pipe.fit_transform(dataframe)
 
-        return tf
+        return transformed_dataframe

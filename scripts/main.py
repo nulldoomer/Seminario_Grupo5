@@ -1,12 +1,12 @@
 from data_ingest import DataIngester
 from data_processing import CreateDataframes
-from data_pipeline import BancosPipeLine
+from data_pipeline import CleaningPipeline
 
 def main():
 
     ingester = DataIngester()
     dataframe_creator = CreateDataframes()
-    pipeline = BancosPipeLine()
+    pipeline = CleaningPipeline()
     dataset_name = "dataset"
 
     try:
@@ -16,7 +16,7 @@ def main():
         data_frames = dataframe_creator.create(path)
 
         for df in data_frames:
-            pipeline.run(df)
+            pipeline.clean(df)
             print(f" Dataframe {df}")
 
     except FileNotFoundError as e:
