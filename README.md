@@ -82,15 +82,12 @@ Para correr un script en especifico se usa:
 ## Análisis del Dataset 
 
 
-![Análisis general del Excel](/doc/images/Analisis general del excel.png)
+![Análisis general del Excel](doc/images/analisis_general.png)
 
+![Análisis Balance](doc/images/analisis_balance.png)
 
-![Análisis Balance y Balance%](/doc/images/Analisis balance y balance%.png)
+![Análisis Composición](doc/images/analisis_compos_cart.png)
 
-
-![Análisis Compos carty Compos cart%](/doc/images/Analisis compos cart y compos cart%.png)
-
-
-![Análisis Indicadores](/doc/images/Analisis Indicadores.png)
+![Análisis Indicadores](doc/images/analisis_indicadores.png)
 
 --- 
