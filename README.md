@@ -90,4 +90,18 @@ Para correr un script en especifico se usa:
 
 ![Análisis Indicadores](doc/images/analisis_indicadores.png)
 
+Con base en el análisis previo, se definió la estrategia a seguir para el 
+desarrollo del pipeline de datos, especificando cómo se realizará la limpieza 
+y el tratamiento de la información con el fin de obtener los KPIs necesarios y
+sustentarlos de manera clara y precisa.
+
 --- 
+
+## Arquitectura Data Pipeline
+
+Se diseñó una arquitectura escalable que responde a los requerimientos y
+objetivos planteados, considerando además la posibilidad de reutilizar el mismo
+proceso con nuevos archivos de Excel correspondientes a otros periodos.
+
+
+![Arquitectura Data Pipeline](doc/images/arquitectura_data_pipeline.png)
