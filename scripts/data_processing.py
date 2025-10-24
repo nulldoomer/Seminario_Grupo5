@@ -7,12 +7,13 @@ class CreateDataframes:
 
         # Create the dataframes for the data we previously analysed
 
-        dataframe_dict = {}
         sheet_names = [
             "BALANCE", "BALANCE %",
             "COMPOS CART","COMPOS CART %",
             "INDICADORES"
         ]
+
+        dataframe_dict = {}
 
         # Fill the dictionary with the dataframes
         # And use the first strategy to clean the data, skiping the rows
@@ -23,18 +24,9 @@ class CreateDataframes:
                                            skiprows=7)
             dataframe_dict[sheet] = temp_dataframe
 
-        # Create each one of the dataframes from the dictionary
-
-        dataframe_balance = dataframe_dict["BALANCE"]
-        dataframe_balance_ptj = dataframe_dict["BALANCE %"]
-        dataframe_composcart = dataframe_dict["COMPOS CART"]
-        dataframe_composcart_ptj = dataframe_dict["COMPOS CART %"]
-        dataframe_indicadores = dataframe_dict["INDICADORES"]
-
         # Return all the dataframes created
 
-        return (dataframe_balance, dataframe_balance_ptj, dataframe_composcart,
-                dataframe_composcart_ptj, dataframe_indicadores)
+        return dataframe_dict
 
 
 # We inherit from BaseEstimator and TransformerMixin to make this class 
@@ -43,7 +35,7 @@ class CreateDataframes:
 # allowing sklearn to call fit_transform() and integrate this step seamlessly 
 # into a data processing workflow.
 
-class DropBlankColumn(BaseEstimator, TransformerMixin):
+class DropBlanksColumn(BaseEstimator, TransformerMixin):
 
     def fit(self, X: pd.DataFrame, y= None):
 
@@ -64,6 +56,10 @@ class DropBlankColumn(BaseEstimator, TransformerMixin):
 
         X.drop("BANCOS PRIVADOS VIVIENDA", axis=1, inplace=True,
                errors="ignore")
+
+        X.drop("Unnamed: 0", axis=1, inplace=True)
+
+        X = X.reset_index(drop=True)
 
         return X 
 
@@ -88,5 +84,31 @@ class DropRowsWithoutValues(BaseEstimator, TransformerMixin):
         # is totally usefull because we don't want blank insertions in our db
         
         X.dropna(thresh=3, inplace=True)
+
+        X = X.reset_index(drop=True)
+
+        return X
+
+
+# Processing for Balance Dataframe
+
+class TakePriorRows(BaseEstimator, TransformerMixin):
+
+    def fit(self, X: pd.DataFrame, y=None):
+
+        return self
+
+    def transform(self, X: pd.DataFrame):
+
+        X = X.copy()
+
+        # Keep only the rows where the code is less than 100, because there
+        # are the most significants rows, the other ones doesn't matter
+
+        X["CÓDIGO"] = pd.to_numeric(X["CÓDIGO"], errors="coerce")
+
+        X = X.loc[X["CÓDIGO"] < 100].copy()
+
+        X = X.reset_index(drop=True)
 
         return X
