@@ -1,7 +1,7 @@
 from sklearn.pipeline import Pipeline
 
 from data_processing import  (
-    DropBlanksColumn, 
+    DropBlankColumns, 
     DropRowsWithoutValues,
     TakePriorRows
 )
@@ -14,7 +14,7 @@ class CleaningPipeline:
         # and use that result to continue with the other one
 
         cleaning_pipe= Pipeline([
-            ("blank_column_dropper", DropBlanksColumn()),
+            ("blank_column_dropper", DropBlankColumns()),
             ("row_dropper", DropRowsWithoutValues())
         ])
 
@@ -41,7 +41,9 @@ class BalanceCleaningPipeline(CleaningPipeline):
             ("row_picker", TakePriorRows())
         ])
 
-        transformed_dataframe = balance_pipe.fit_transform(dataframe)
+        final_dataframe = balance_pipe.fit_transform(
+            transformed_dataframe
+        )
 
-        return transformed_dataframe
+        return final_dataframe 
 

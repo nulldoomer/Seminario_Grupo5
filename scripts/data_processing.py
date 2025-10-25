@@ -35,7 +35,7 @@ class CreateDataframes:
 # allowing sklearn to call fit_transform() and integrate this step seamlessly 
 # into a data processing workflow.
 
-class DropBlanksColumn(BaseEstimator, TransformerMixin):
+class DropBlankColumns(BaseEstimator, TransformerMixin):
 
     def fit(self, X: pd.DataFrame, y= None):
 
