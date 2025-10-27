@@ -8,7 +8,7 @@ class DataIngester:
         file_path= os.path.dirname(os.path.abspath(__file__))
 
         # Builds up the path to the dataset
-        data_path= os.path.join(file_path,"..", dataset_name,
+        data_path= os.path.join(file_path, r"..\..", dataset_name,
                                 f"{dataset_name}.xlsx")
 
         # Check if the file exist, if it doesn't throw an exception with raise

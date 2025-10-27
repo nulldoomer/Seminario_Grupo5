@@ -1,5 +1,6 @@
 from data_ingest import DataIngester
 from data_processing import CreateDataframes
+from data_saving import SaveCleanData
 
 from data_pipeline import (
     CleaningPipeline,
@@ -14,6 +15,7 @@ def main():
     dataframe_creator = CreateDataframes()
     main_pipeline = CleaningPipeline()
     balance_pipeline = BalanceCleaningPipeline()
+    data_saver = SaveCleanData()
     dataset_name = "dataset"
 
     try:
@@ -28,7 +30,7 @@ def main():
 
             print(f"\nProcesando hoja: {name}")
 
-            if "BALANCE" == name:
+            if name == "BALANCE":
 
                 print("→ Aplicando pipeline de BALANCE")
                 df = balance_pipeline.clean(df)
@@ -42,14 +44,13 @@ def main():
             print("Resultado después del pipeline:")
             print(df.head(5))
             print(f"Shape final: {df.shape}")
+
+            data_saver.save(df, name)
             # print(f"Check de Columnas: {df.dtypes}")
 
     except FileNotFoundError as e:
 
         print(e)
-
-
-
 
 
 
