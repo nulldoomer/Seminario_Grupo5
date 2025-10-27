@@ -4,12 +4,19 @@ class DataIngester:
 
     def ingest (self, dataset_name):
 
-        # Get the path of the current script 
-        file_path= os.path.dirname(os.path.abspath(__file__))
+        # Get the root path of the project
+        project_root = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "../.."
+        ))
 
-        # Builds up the path to the dataset
-        data_path= os.path.join(file_path, r"..\..", dataset_name,
-                                f"{dataset_name}.xlsx")
+        # Get the directory route where is the dataset
+        dataset_dir = os.path.join(project_root, "dataset")
+
+        # Create the path to the file
+        data_path= os.path.join(
+            dataset_dir,
+            f"{dataset_name}.xlsx"
+        )
 
         # Check if the file exist, if it doesn't throw an exception with raise
         if not os.path.exists(data_path):
