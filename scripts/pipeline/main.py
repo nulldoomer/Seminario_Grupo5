@@ -54,7 +54,6 @@ def main():
 
             final_dataframes.append(df)
 
-            # print(f"Check de Columnas: {df.dtypes}")
 
         concat_dataframe = concat_pipeline.concat(final_dataframes)
 
