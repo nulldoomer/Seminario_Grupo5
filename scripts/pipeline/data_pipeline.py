@@ -3,7 +3,10 @@ from sklearn.pipeline import Pipeline
 from data_processing import  (
     DropBlankColumns, 
     DropRowsWithoutValues,
-    TakePriorRows
+    TakePriorRows,
+    MeltBanksIndicatorsAndValues,
+    DropCodeColumn,
+    RenameColumns
 )
 
 class CleaningPipeline:
@@ -13,9 +16,10 @@ class CleaningPipeline:
         # Execute the process in sequence, obtain the result from one process
         # and use that result to continue with the other one
 
-        cleaning_pipe= Pipeline([
+        cleaning_pipe = Pipeline([
             ("blank_column_dropper", DropBlankColumns()),
-            ("row_dropper", DropRowsWithoutValues())
+            ("row_dropper", DropRowsWithoutValues()),
+            ("tidy_formatter", MeltBanksIndicatorsAndValues())
         ])
 
         transformed_dataframe = cleaning_pipe.fit_transform(dataframe)
@@ -37,7 +41,7 @@ class BalanceCleaningPipeline(CleaningPipeline):
 
         # Implement the new specific pipeline for the dataframe
 
-        balance_pipe= Pipeline([
+        balance_pipe = Pipeline([
             ("row_picker", TakePriorRows())
         ])
 
@@ -46,4 +50,17 @@ class BalanceCleaningPipeline(CleaningPipeline):
         )
 
         return final_dataframe 
+
+class MatchColumnsPipeline:
+
+    def match(self, dataframe):
+
+        match_pipe = Pipeline([
+            ("drop_extra_column", DropCodeColumn()),
+            ("rename_columns", RenameColumns())
+        ])
+
+        transformed_dataframe = match_pipe.fit_transform(dataframe)
+
+        return transformed_dataframe
 

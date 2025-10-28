@@ -4,7 +4,8 @@ from data_saving import SaveCleanData
 
 from data_pipeline import (
     CleaningPipeline,
-    BalanceCleaningPipeline
+    BalanceCleaningPipeline,
+    MatchColumnsPipeline
 )
 
 def main():
@@ -15,6 +16,7 @@ def main():
     dataframe_creator = CreateDataframes()
     main_pipeline = CleaningPipeline()
     balance_pipeline = BalanceCleaningPipeline()
+    match_pipeline = MatchColumnsPipeline()
     data_saver = SaveCleanData()
     dataset_name = "dataset"
 
@@ -34,18 +36,20 @@ def main():
 
                 print("→ Aplicando pipeline de BALANCE")
                 df = balance_pipeline.clean(df)
+                df = match_pipeline.match(df)
+
 
             else:
 
                  print("→ Aplicando pipeline general")
                  df = main_pipeline.clean(df)
-
+                 df = match_pipeline.match(df)
 
             print("Resultado después del pipeline:")
             print(df.head(5))
             print(f"Shape final: {df.shape}")
 
-            data_saver.save(df, name)
+            # data_saver.save(df, name)
             # print(f"Check de Columnas: {df.dtypes}")
 
     except FileNotFoundError as e:

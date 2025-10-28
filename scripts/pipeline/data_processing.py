@@ -8,8 +8,8 @@ class CreateDataframes:
         # Create the dataframes for the data we previously analysed
 
         sheet_names = [
-            "BALANCE", "BALANCE %",
-            "COMPOS CART","COMPOS CART %",
+            "BALANCE", 
+            "COMPOS CART",
             "INDICADORES"
         ]
 
@@ -110,5 +110,84 @@ class TakePriorRows(BaseEstimator, TransformerMixin):
         X = X.loc[X["CÓDIGO"] < 100].copy()
 
         X = X.reset_index(drop=True)
+
+        return X
+
+# We change the format of the dataframes, because it's wide and complex to
+# analyse so we're changing that by using melt function to it and returning
+# the melted dataframe, so now we have 3 columns with every record of every
+# bank
+
+class MeltBanksIndicatorsAndValues(BaseEstimator, TransformerMixin):
+
+    def fit(self, X:pd.DataFrame, y=None):
+
+        return self
+
+
+    # Because the format of the tables are not the same we apply a filter to
+    # change the dataframe and mantain the flow of information on this ones
+
+    def transform(self, X: pd.DataFrame):
+        
+        X = X.copy()
+
+        if "CUENTA" in X.columns:
+
+            id_cols = ["CÓDIGO","CUENTA"]
+
+        elif "NOMBRE DEL INDICADOR" in X.columns:
+
+            id_cols = ["NOMBRE DEL INDICADOR"]
+
+        else:
+            return Exception(f"No se encontro la columna con ese nombre")
+
+
+        # We use the column that'll be the same, with id_col after we checked
+        # the value of it
+        X_melted = pd.melt(
+            X,
+            id_vars= id_cols,
+            var_name= "Banks",
+            value_name="Valor Indicador"
+        ).copy()
+
+        return X_melted
+
+# After we filter and clean the data, we drop the unused column of CÓDIGO
+
+class DropCodeColumn(BaseEstimator, TransformerMixin):
+
+    def fit(self, X: pd.DataFrame, y=None):
+
+        return self
+
+    def transform(self, X: pd.DataFrame):
+
+        X = X.copy()
+
+        X.drop("CÓDIGO", axis=1, inplace=True,
+               errors="ignore")
+
+        X = X.reset_index(drop=True)
+
+        return X 
+
+
+# After we match the number of columns on each dataframe, we continue with
+# changing the name to match everything for the concat of the dataframes
+
+class RenameColumns(BaseEstimator, TransformerMixin):
+
+    def fit(self, X: pd.DataFrame, y=None):
+
+        return self
+
+    def transform(self, X: pd.DataFrame):
+
+        X = X.copy()
+
+        X.rename(columns={"CUENTA": "NOMBRE DEL INDICADOR"}, inplace=True)
 
         return X
