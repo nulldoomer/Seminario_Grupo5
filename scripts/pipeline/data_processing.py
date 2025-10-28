@@ -191,3 +191,21 @@ class RenameColumns(BaseEstimator, TransformerMixin):
         X.rename(columns={"CUENTA": "NOMBRE DEL INDICADOR"}, inplace=True)
 
         return X
+
+# Finally after cleaning and matching all the main data, we concat all the
+# dataframes into big tidy one
+
+class ConcatDataframes(BaseEstimator, TransformerMixin):
+
+    def fit(self, X: pd.DataFrame, y=None):
+
+        return self
+
+    def transform(self, X:(pd.DataFrame)):
+
+        X = X.copy()
+
+        X_final_dataframe = pd.concat(X)
+
+        return X_final_dataframe
+

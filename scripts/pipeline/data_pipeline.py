@@ -6,7 +6,8 @@ from data_processing import  (
     TakePriorRows,
     MeltBanksIndicatorsAndValues,
     DropCodeColumn,
-    RenameColumns
+    RenameColumns,
+    ConcatDataframes
 )
 
 class CleaningPipeline:
@@ -64,3 +65,14 @@ class MatchColumnsPipeline:
 
         return transformed_dataframe
 
+class ConcatDataframesPipeline:
+
+    def concat(self, dataframe):
+
+        concat_pipe= Pipeline([
+            ("concater", ConcatDataframes())
+        ])
+
+        transformed_dataframe = concat_pipe.fit_transform(dataframe)
+
+        return transformed_dataframe
