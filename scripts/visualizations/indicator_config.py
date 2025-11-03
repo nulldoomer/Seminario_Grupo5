@@ -49,3 +49,38 @@ class IndicatorConfig:
                 ]
             }
             return indicators
+
+
+    # Get all indicators by category
+    @staticmethod
+    def get_all_indicators_by_category(category_name):
+
+        all_indicators = IndicatorConfig.get_all_indicators();
+
+        return all_indicators.get(category_name, [])
+
+    #Get the names of the indicators by the category of the dict
+
+    @staticmethod
+    def get_indicator_names_by_category(category_name):
+
+        indicators = IndicatorConfig.get_all_indicators_by_category(
+         category_name)
+
+        indicators_names = {}
+
+        for indicator in indicators:
+
+            indicators_names = {indicator.name : indicator.description}
+
+        return indicators_names
+
+
+    # Then we avoid to use a flag in an if statement
+    @staticmethod
+    def get_category_unit(category_name):
+        
+        if category_name == "Rendimiento":
+            return "%"
+        else:
+            return "$"

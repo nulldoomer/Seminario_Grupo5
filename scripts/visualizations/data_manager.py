@@ -1,8 +1,17 @@
+from typing import Optional
 import pandas as pd
 import streamlit as st
 import os
+from indicator_config import IndicatorConfig
 
 class DataManager:
+
+
+    def __init__(self, data_loader):
+
+        self.load_data = data_loader
+
+        self.dataframe : Optional[pd.DataFrame] = None
 
     @st.cache_data
     def load_data(self, dataset_name):
@@ -55,51 +64,20 @@ class DataManager:
         )
 
         return dataframe
-    
-    def filter_by_category(self, category_name):
 
-        INDICADORES_BALANCE = {
-            "FONDOS DISPONIBLES": "Liquidez inmediata",
-            "INVERSIONES": "Activos financieros",
-            "CARTERA DE CRÉDITOS": "Préstamos otorgados",
-            "DEUDORES POR ACEPTACIONES": "Compromisos de pago",
-            "CUENTAS POR COBRAR": "Cuentas pendientes",
-            "PROPIEDADES Y EQUIPO": "Activos fijos",
-            "OTROS ACTIVOS": "Activos diversos"
-        }
 
-        INDICADORES_RENDIMIENTO = {
-            "RESULTADOS DEL EJERCICIO / ACTIVO PROMEDIO": "ROA - Rentabilidad",
-            "RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO": "ROE - Rentabilidad",
-            "MOROSIDAD DE LA CARTERA TOTAL": "Calidad de cartera",
-            "ACTIVOS PRODUCTIVOS / TOTAL ACTIVOS": "Eficiencia activos",
-            "FONDOS DISPONIBLES / TOTAL DEPOSITOS A CORTO PLAZO": "Liquidez",
-            "GASTOS DE OPERACION ESTIMADOS / TOTAL ACTIVO PROMEDIO (3)": "Eficiencia operativa"
-        }
-
-        INDICADORES_ESTRUCTURA = {
-            "TOTAL ACTIVO": "Tamaño del banco",
-            "TOTAL PATRIMONIO": "Capital propio",
-            "TOTAL PASIVOS": "Obligaciones totales",
-            "OBLIGACIONES CON EL PÚBLICO": "Depósitos captados",
-            "CAPITAL SOCIAL": "Capital accionario"
-        }
-        # To make this we need the dataframe, the dictionary of the indicadores,
-        # where we're going to take only the keys and turn it into a list
-        # then take only the rows that has the list of indicadores
-
-        if category_name== "Balance":
-            indicadores_activos = INDICADORES_BALANCE
-            es_porcentaje = False
-            unidad = "$"
-            st.info("💼 **Balance:** Activos y recursos del banco")
-        elif category_name== "Rendimiento":
-            indicadores_activos = INDICADORES_RENDIMIENTO
-            es_porcentaje = True
-            unidad = "%"
-            st.info("📊 **Rendimiento:** Rentabilidad y eficiencia")
-        else:
-            indicadores_activos = INDICADORES_ESTRUCTURA
-            es_porcentaje = False
-            unidad = "$"
-            st.info("🏗️ **Estructura:** Composición financiera")
+    # def filter_by_category( self, category, is_percentage):
+    #
+    #     indicator_names = IndicatorConfig.get_indicator_names_by_category(
+    #         category
+    #     )
+    #
+    #     filtered_dataframe = self.dataframe[
+    #         self.dataframe["nombre_del_indicador"].isin(
+    #             indicator_names.keys()
+    #         )
+    #     ].copy()
+    #
+    #     return filtered_dataframe
+    #
+    #
