@@ -67,13 +67,7 @@ class IndicatorConfig:
         indicators = IndicatorConfig.get_all_indicators_by_category(
          category_name)
 
-        indicators_names = {}
-
-        for indicator in indicators:
-
-            indicators_names = {indicator.name : indicator.description}
-
-        return indicators_names
+        return {ind.name: ind.description for ind in indicators}
     
 
     # Check if the category needs to use percentage

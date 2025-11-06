@@ -99,7 +99,7 @@ class MetricsCalculator:
             "total" : float(df["valor_indicador"].sum()),
             "promedio" : float(df["valor_indicador"].mean()),
             "mediana" : float(df["valor_indicador"].median()),
-            "desviación" : float(df["valor_indicador"].std()),
+            "desviacion" : float(df["valor_indicador"].std()),
             "min" : float(df["valor_indicador"].min()),
             "max" : float(df["valor_indicador"].max()),
         }

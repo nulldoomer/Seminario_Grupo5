@@ -427,36 +427,36 @@ st.caption("💡 Dashboard de Salud Financiera - Sistema Bancario Ecuatoriano")
 st.caption("📅 Datos: Superintendencia de Bancos - Septiembre 2025")
 
 
-# =========================================================
-# 🔍 INFORMACIÓN DE DEBUG (Opcional - Solo en desarrollo)
-# =========================================================
-if st.sidebar.checkbox("🔧 Modo Debug", value=False):
-    st.markdown("---")
-    st.markdown("### 🔍 Información de Debug")
-    
-    col_debug1, col_debug2 = st.columns(2)
-    
-    with col_debug1:
-        st.markdown("**Información del Dataset:**")
-        summary = dh.get_summary(df)
-        st.json({
-            "Shape": summary["shape"],
-            "Total Bancos": summary["total_banks"],
-            "Total Indicadores": summary["total_indicators"]
-        })
-    
-    with col_debug2:
-        st.markdown("**Filtros Activos:**")
-        st.json({
-            "Categoría": categoria,
-            "Es Porcentaje": is_percentage,
-            "Unidad": unit,
-            "Banco": selected_bank,
-            "Indicador": selected_indicator
-        })
-    
-    st.markdown("**Vista previa de datos filtrados:**")
-    st.dataframe(df_filtrado.head(10), use_container_width=True)
-    
-    st.markdown("**Columnas disponibles:**")
-    st.write(df.columns.tolist())
+# # =========================================================
+# # 🔍 INFORMACIÓN DE DEBUG (Opcional - Solo en desarrollo)
+# # =========================================================
+# if st.sidebar.checkbox("🔧 Modo Debug", value=False):
+#     st.markdown("---")
+#     st.markdown("### 🔍 Información de Debug")
+#
+#     col_debug1, col_debug2 = st.columns(2)
+#
+#     with col_debug1:
+#         st.markdown("**Información del Dataset:**")
+#         summary = dh.get_summary(df)
+#         st.json({
+#             "Shape": summary["shape"],
+#             "Total Bancos": summary["total_banks"],
+#             "Total Indicadores": summary["total_indicators"]
+#         })
+#
+#     with col_debug2:
+#         st.markdown("**Filtros Activos:**")
+#         st.json({
+#             "Categoría": categoria,
+#             "Es Porcentaje": is_percentage,
+#             "Unidad": unit,
+#             "Banco": selected_bank,
+#             "Indicador": selected_indicator
+#         })
+#
+#     st.markdown("**Vista previa de datos filtrados:**")
+#     st.dataframe(df_filtrado.head(10), use_container_width=True)
+#
+#     st.markdown("**Columnas disponibles:**")
+#     st.write(df.columns.tolist())
