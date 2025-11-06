@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 from dataclasses import dataclass
 
 @dataclass
@@ -74,13 +74,18 @@ class IndicatorConfig:
             indicators_names = {indicator.name : indicator.description}
 
         return indicators_names
+    
+
+    # Check if the category needs to use percentage
+    @staticmethod
+    def is_category_percentage(category: str) -> bool:
+
+        return category == "Rendimiento"
 
 
     # Then we avoid to use a flag in an if statement
     @staticmethod
     def get_category_unit(category_name):
+
+        return "%" if category_name == "Rendimiento" else "$"
         
-        if category_name == "Rendimiento":
-            return "%"
-        else:
-            return "$"
