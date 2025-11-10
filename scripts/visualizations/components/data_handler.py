@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 import pandas as pd
 import streamlit as st
-from data_loader import VisualizationDataLoader
+from ..data_loader import VisualizationDataLoader
 
 class DataHandler:
 
