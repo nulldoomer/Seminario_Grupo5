@@ -1590,21 +1590,33 @@ name = "seminario-grupo5"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "jinja2" },
+    { name = "matplotlib" },
     { name = "missingno" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "openpyxl" },
     { name = "pandas" },
     { name = "plotly" },
     { name = "scikit-learn" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.16.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "seaborn" },
     { name = "streamlit" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "matplotlib", specifier = ">=3.10.7" },
     { name = "missingno", specifier = ">=0.5.2" },
+    { name = "numpy", specifier = ">=2.2.6" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "plotly", specifier = ">=6.3.1" },
     { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "scipy", specifier = ">=1.15.3" },
+    { name = "seaborn", specifier = ">=0.13.2" },
     { name = "streamlit", specifier = ">=1.50.0" },
 ]
 

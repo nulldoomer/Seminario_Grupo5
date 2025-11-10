@@ -40,6 +40,21 @@ class IndicatorConfig:
                     IndicatorConfig("FONDOS DISPONIBLES / TOTAL DEPOSITOS A CORTO PLAZO", "Rendimiento", True, "%", "Liquidez"),
                     IndicatorConfig("GASTOS DE OPERACION ESTIMADOS / TOTAL ACTIVO PROMEDIO (3)", "Rendimiento", True, "%", "Eficiencia operativa"),
                 ],
+                "Calidad_Riesgo": [
+                    IndicatorConfig("MOROSIDAD DE LA CARTERA TOTAL", "Calidad_Riesgo", True, "%", "Tasa de Morosidad"),
+                    IndicatorConfig("PROVISIONES CARTERA DE CREDITO", "Calidad_Riesgo", False, "$", "Provisiones para cartera vencida"),
+                    IndicatorConfig("PATRIMONIO / ACTIVOS TOTALES", "Calidad_Riesgo", True, "%", "Ratio de Solvencia"),
+                ],
+                "Eficiencia": [
+                    IndicatorConfig("GASTOS DE OPERACION / INGRESOS TOTALES", "Eficiencia", True, "%", "Índice de Eficiencia Bancaria"),
+                    IndicatorConfig("INGRESOS / GASTOS", "Eficiencia", False, "ratio", "Ratio de Eficiencia Operativa"),
+                    IndicatorConfig("GASTOS DE OPERACION ESTIMADOS / TOTAL ACTIVO PROMEDIO (3)", "Eficiencia", True, "%", "Gastos Operativos sobre Activos"),
+                ],
+                "Crecimiento": [
+                    IndicatorConfig("VARIACION_ACTIVOS_ANUAL", "Crecimiento", True, "%", "Variación de Activos Totales"),
+                    IndicatorConfig("VARIACION_PATRIMONIO_ANUAL", "Crecimiento", True, "%", "Variación de Patrimonio"),
+                    IndicatorConfig("VARIACION_DEPOSITOS_ANUAL", "Crecimiento", True, "%", "Variación de Depósitos"),
+                ],
                 "Estructura": [
                     IndicatorConfig("TOTAL ACTIVO", "Estructura", False, "$", "Tamaño del banco"),
                     IndicatorConfig("TOTAL PATRIMONIO", "Estructura", False, "$", "Capital propio"),
@@ -74,12 +89,12 @@ class IndicatorConfig:
     @staticmethod
     def is_category_percentage(category: str) -> bool:
 
-        return category == "Rendimiento"
+        return category in ["Rendimiento", "Calidad_Riesgo", "Eficiencia", "Crecimiento"]
 
 
     # Then we avoid to use a flag in an if statement
     @staticmethod
     def get_category_unit(category_name):
 
-        return "%" if category_name == "Rendimiento" else "$"
+        return "%" if category_name in ["Rendimiento", "Calidad_Riesgo", "Eficiencia", "Crecimiento"] else "$"
         
