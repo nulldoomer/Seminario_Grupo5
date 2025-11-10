@@ -1,7 +1,7 @@
 import requests
 import pandas as pd
 import streamlit as st
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 
 class BankApiClient:
@@ -50,19 +50,17 @@ class BankApiClient:
     def get_banks_list(self, category):
 
         try:
-
             response = requests.get(
                 f"{self.base_url}/financials/banks",
                 params={"category": category},
-                timeout= self.timeout
+                timeout=self.timeout
             )
-
-            return response.json()
-
-        except Exception as e:
-
-            st.error(f"Ha ocurrido un error al obtener la informacion {e}")
             
+            data = response.json()
+            return data.get("banks", [])
+            
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error obteniendo lista de bancos: {e}")
             return None
 
 
@@ -85,7 +83,7 @@ class BankApiClient:
             return None
 
 
-    def get_comparative_table(self, category, banks):
+    def get_comparative_table(self, category, banks: Optional[List[str]] = None):
 
         try:
 

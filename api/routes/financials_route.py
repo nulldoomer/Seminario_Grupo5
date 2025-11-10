@@ -98,11 +98,6 @@ def get_ranking(
     is_percentage = IndicatorConfig.is_category_percentage(category)
     unit = IndicatorConfig.get_category_unit(category)
     
-    if kpi not in indicator_names:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Indicador '{kpi}' no encontrado en categoría {category}." 
-        )
     
     df_filtrado = dh.filter_by_category(indicator_names, is_percentage)
     
