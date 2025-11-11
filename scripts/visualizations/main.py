@@ -776,39 +776,413 @@ with tab_especifico:
         st.markdown("---")
         
         # =========================================================
-        # 📈 PERFIL DE INDICADORES DEL BANCO
+        # 📈 ANÁLISIS FINANCIERO PROFESIONAL DEL BANCO
         # =========================================================
-        st.subheader(f"📈 Perfil de Indicadores: {selected_bank}")
+        st.subheader(f"📈 Análisis Financiero Profesional: {selected_bank}")
         
-        # Obtener y organizar indicadores por categoría
+        # Obtener todos los indicadores del banco
         bank_indicators = bank_df[['nombre_del_indicador', 'valor_indicador']].copy()
         
-        # Definir categorías manualmente para organizar mejor
-        categorias_info = {
-            "Balance": ["TOTAL ACTIVO", "TOTAL PASIVO", "TOTAL PATRIMONIO", "CARTERA DE CRÉDITOS NETA"],
-            "Rendimiento": ["RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO", "RESULTADOS DEL EJERCICIO / ACTIVO PROMEDIO"],
-            "Eficiencia": ["GASTOS OPERACIONALES / ACTIVO PROMEDIO", "GASTOS OPERACIONALES / MARGEN FINANCIERO"],
-            "Riesgo": ["MOROSIDAD DE LA CARTERA TOTAL", "COBERTURA DE LA CARTERA IMPRODUCTIVA"]
-        }
-        
-        # Mostrar indicadores por categoría
-        for cat_name, indicators in categorias_info.items():
-            cat_data = bank_indicators[bank_indicators['nombre_del_indicador'].isin(indicators)]
+        # =========================================================
+        # 🧱 INDICADORES DE SOLVENCIA Y SOLIDEZ
+        # =========================================================
+        with st.expander("🧱 **Solvencia y Solidez Financiera**", expanded=True):
+            st.markdown("**Capacidad del banco para absorber pérdidas y mantener estabilidad**")
             
-            if not cat_data.empty:
-                with st.expander(f"📊 {cat_name} ({len(cat_data)} indicadores)", expanded=True):
-                    cols = st.columns(min(len(cat_data), 3))
+            col_solv1, col_solv2, col_solv3 = st.columns(3)
+            
+            with col_solv1:
+                # Ratio de Patrimonio/Activos (Solvencia)
+                patrimonio = bank_indicators[bank_indicators['nombre_del_indicador'] == 'TOTAL PATRIMONIO']
+                activos = bank_indicators[bank_indicators['nombre_del_indicador'] == 'TOTAL ACTIVO']
+                
+                if not patrimonio.empty and not activos.empty:
+                    ratio_solvencia = (patrimonio['valor_indicador'].iloc[0] / activos['valor_indicador'].iloc[0]) * 100
+                    color = "normal" if ratio_solvencia >= 10 else "inverse"
+                    st.metric(
+                        "🧱 Ratio de Solvencia",
+                        f"{ratio_solvencia:.2f}%",
+                        "Patrimonio/Activos",
+                        delta_color=color
+                    )
+                    st.caption("✅ Ideal: ≥ 10% (Basilea)")
+                else:
+                    st.metric("🧱 Ratio de Solvencia", "N/D")
+            
+            with col_solv2:
+                # Apalancamiento (Activos/Patrimonio)
+                if not patrimonio.empty and not activos.empty:
+                    apalancamiento = activos['valor_indicador'].iloc[0] / patrimonio['valor_indicador'].iloc[0]
+                    color = "inverse" if apalancamiento < 12 else "normal"
+                    st.metric(
+                        "⚖️ Apalancamiento",
+                        f"{apalancamiento:.1f}x",
+                        "Activos/Patrimonio",
+                        delta_color=color
+                    )
+                    st.caption("✅ Ideal: < 12x")
+                else:
+                    st.metric("⚖️ Apalancamiento", "N/D")
+            
+            with col_solv3:
+                # Indicador adicional de solidez si existe
+                solidez = bank_indicators[bank_indicators['nombre_del_indicador'].str.contains('PATRIMONIO', na=False)]
+                if len(solidez) > 1:
+                    st.metric("🏛️ Solidez Patrimonial", "Múltiples métricas", "Ver detalles abajo")
+                else:
+                    st.metric("🏛️ Estado General", "Estable", "Basado en ratios")
+        
+        # =========================================================
+        # 💧 INDICADORES DE LIQUIDEZ
+        # =========================================================
+        with st.expander("💧 **Liquidez y Capacidad de Pago**", expanded=True):
+            st.markdown("**Capacidad para cumplir obligaciones inmediatas y retiros**")
+            
+            col_liq1, col_liq2, col_liq3 = st.columns(3)
+            
+            with col_liq1:
+                # Fondos Disponibles/Obligaciones con el Público
+                fondos_disp = bank_indicators[bank_indicators['nombre_del_indicador'] == 'FONDOS DISPONIBLES']
+                obligaciones = bank_indicators[bank_indicators['nombre_del_indicador'] == 'OBLIGACIONES CON EL PÚBLICO']
+                
+                if not fondos_disp.empty and not obligaciones.empty:
+                    ratio_liquidez = (fondos_disp['valor_indicador'].iloc[0] / obligaciones['valor_indicador'].iloc[0]) * 100
+                    color = "normal" if ratio_liquidez >= 20 else "inverse"
+                    st.metric(
+                        "💧 Ratio de Liquidez",
+                        f"{ratio_liquidez:.2f}%",
+                        "Fondos Disp./Obligaciones",
+                        delta_color=color
+                    )
+                    st.caption("✅ Ideal: ≥ 20%")
+                else:
+                    st.metric("💧 Ratio de Liquidez", "N/D")
+            
+            with col_liq2:
+                # Liquidez inmediata (si hay datos de activos líquidos)
+                if not fondos_disp.empty:
+                    liquidez_abs = fondos_disp['valor_indicador'].iloc[0]
+                    st.metric(
+                        "💰 Fondos Disponibles",
+                        f"${liquidez_abs:,.0f}",
+                        "Liquidez absoluta"
+                    )
+                    st.caption("💡 Dinero inmediatamente disponible")
+                else:
+                    st.metric("💰 Fondos Disponibles", "N/D")
+            
+            with col_liq3:
+                # Ratio de activos líquidos si existe
+                if not activos.empty and not fondos_disp.empty:
+                    ratio_activos_liq = (fondos_disp['valor_indicador'].iloc[0] / activos['valor_indicador'].iloc[0]) * 100
+                    st.metric(
+                        "📊 % Activos Líquidos",
+                        f"{ratio_activos_liq:.2f}%",
+                        "Fondos/Total Activos"
+                    )
+                    st.caption("💡 Flexibilidad financiera")
+                else:
+                    st.metric("📊 % Activos Líquidos", "N/D")
+        
+        # =========================================================
+        # 💰 INDICADORES DE RENTABILIDAD
+        # =========================================================
+        with st.expander("💰 **Rentabilidad y Eficiencia Financiera**", expanded=True):
+            st.markdown("**Capacidad de generar valor y retornos sostenibles**")
+            
+            col_rent1, col_rent2, col_rent3 = st.columns(3)
+            
+            with col_rent1:
+                # ROE (Return on Equity)
+                roe = bank_indicators[bank_indicators['nombre_del_indicador'] == 'RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO']
+                if not roe.empty:
+                    roe_val = roe['valor_indicador'].iloc[0]
+                    if 10 <= roe_val <= 20:
+                        color = "normal"
+                        status = "Excelente"
+                    elif roe_val >= 10:
+                        color = "normal" 
+                        status = "Bueno"
+                    else:
+                        color = "inverse"
+                        status = "Bajo"
                     
-                    for i, (_, row) in enumerate(cat_data.iterrows()):
-                        with cols[i % 3]:
-                            indicator_name = row['nombre_del_indicador']
-                            value = row['valor_indicador']
-                            
-                            # Formatear según tipo de indicador
-                            if any(word in indicator_name.upper() for word in ['PROMEDIO', '%', 'MOROSIDAD', 'COBERTURA']):
-                                st.metric(indicator_name[:20] + "...", f"{value:.2f}%")
-                            else:
-                                st.metric(indicator_name[:20] + "...", f"${value:,.0f}")
+                    st.metric(
+                        "📈 ROE",
+                        f"{roe_val:.2f}%",
+                        f"Estado: {status}",
+                        delta_color=color
+                    )
+                    st.caption("✅ Ideal: 10-20%")
+                else:
+                    st.metric("📈 ROE", "N/D")
+            
+            with col_rent2:
+                # ROA (Return on Assets)
+                roa = bank_indicators[bank_indicators['nombre_del_indicador'] == 'RESULTADOS DEL EJERCICIO / ACTIVO PROMEDIO']
+                if not roa.empty:
+                    roa_val = roa['valor_indicador'].iloc[0]
+                    if 0.5 <= roa_val <= 2:
+                        color = "normal"
+                        status = "Excelente"
+                    elif roa_val >= 0.5:
+                        color = "normal"
+                        status = "Bueno"
+                    else:
+                        color = "inverse"
+                        status = "Bajo"
+                    
+                    st.metric(
+                        "📊 ROA",
+                        f"{roa_val:.2f}%",
+                        f"Estado: {status}",
+                        delta_color=color
+                    )
+                    st.caption("✅ Ideal: 0.5-2%")
+                else:
+                    st.metric("📊 ROA", "N/D")
+            
+            with col_rent3:
+                # Margen de Intermediación si está disponible
+                margen_fin = bank_indicators[bank_indicators['nombre_del_indicador'].str.contains('MARGEN', na=False)]
+                if not margen_fin.empty:
+                    st.metric(
+                        "💹 Margen Financiero",
+                        f"${margen_fin['valor_indicador'].iloc[0]:,.0f}",
+                        "Ingresos netos"
+                    )
+                    st.caption("💡 Capacidad de generar ingresos")
+                else:
+                    # Calcular margen neto aproximado
+                    resultados = bank_indicators[bank_indicators['nombre_del_indicador'].str.contains('RESULTADOS DEL EJERCICIO', na=False)]
+                    if not resultados.empty and not activos.empty:
+                        margen_aprox = (resultados['valor_indicador'].iloc[0] / activos['valor_indicador'].iloc[0]) * 100
+                        st.metric(
+                            "💹 Margen Neto",
+                            f"{margen_aprox:.3f}%",
+                            "Resultados/Activos"
+                        )
+                    else:
+                        st.metric("💹 Margen Neto", "N/D")
+        
+        # =========================================================
+        # 🧮 INDICADORES DE EFICIENCIA OPERATIVA
+        # =========================================================
+        with st.expander("🧮 **Eficiencia Operativa**", expanded=True):
+            st.markdown("**Eficiencia en el uso de recursos y control de gastos**")
+            
+            col_ef1, col_ef2, col_ef3 = st.columns(3)
+            
+            with col_ef1:
+                # Ratio de Eficiencia (Gastos/Ingresos)
+                gastos_op = bank_indicators[bank_indicators['nombre_del_indicador'].str.contains('GASTOS', na=False)]
+                if not gastos_op.empty:
+                    # Buscar múltiples métricas de gastos
+                    gastos_activos = bank_indicators[bank_indicators['nombre_del_indicador'] == 'GASTOS OPERACIONALES / ACTIVO PROMEDIO']
+                    gastos_margen = bank_indicators[bank_indicators['nombre_del_indicador'] == 'GASTOS OPERACIONALES / MARGEN FINANCIERO']
+                    
+                    if not gastos_margen.empty:
+                        ef_ratio = gastos_margen['valor_indicador'].iloc[0]
+                        color = "inverse" if ef_ratio < 60 else "normal"
+                        status = "Eficiente" if ef_ratio < 60 else "Ineficiente"
+                        
+                        st.metric(
+                            "🧮 Ratio de Eficiencia",
+                            f"{ef_ratio:.2f}%",
+                            f"Estado: {status}",
+                            delta_color=color
+                        )
+                        st.caption("✅ Ideal: < 60%")
+                    else:
+                        st.metric("🧮 Ratio de Eficiencia", "N/D")
+                else:
+                    st.metric("🧮 Ratio de Eficiencia", "N/D")
+            
+            with col_ef2:
+                # Gastos Operacionales/Activos
+                gastos_activos = bank_indicators[bank_indicators['nombre_del_indicador'] == 'GASTOS OPERACIONALES / ACTIVO PROMEDIO']
+                if not gastos_activos.empty:
+                    ga_ratio = gastos_activos['valor_indicador'].iloc[0]
+                    st.metric(
+                        "📊 Gastos/Activos",
+                        f"{ga_ratio:.2f}%",
+                        "Eficiencia de activos"
+                    )
+                    st.caption("💡 Menor = más eficiente")
+                else:
+                    st.metric("📊 Gastos/Activos", "N/D")
+            
+            with col_ef3:
+                # Productividad (si hay datos de empleados o sucursales)
+                if not activos.empty:
+                    # Proxy de productividad: Activos por unidad
+                    productividad_aprox = activos['valor_indicador'].iloc[0] / 1000000  # En millones
+                    st.metric(
+                        "⚡ Productividad",
+                        f"${productividad_aprox:.0f}M",
+                        "Escala operativa"
+                    )
+                    st.caption("💡 Tamaño y capacidad")
+                else:
+                    st.metric("⚡ Productividad", "N/D")
+        
+        # =========================================================
+        # 📉 INDICADORES DE RIESGO CREDITICIO
+        # =========================================================
+        with st.expander("📉 **Riesgo Crediticio y Calidad de Cartera**", expanded=True):
+            st.markdown("**Evaluación del riesgo de crédito y calidad de la cartera**")
+            
+            col_risk1, col_risk2, col_risk3 = st.columns(3)
+            
+            with col_risk1:
+                # Morosidad de la Cartera
+                morosidad = bank_indicators[bank_indicators['nombre_del_indicador'] == 'MOROSIDAD DE LA CARTERA TOTAL']
+                if not morosidad.empty:
+                    mor_val = morosidad['valor_indicador'].iloc[0]
+                    if mor_val <= 3:
+                        color = "normal"
+                        status = "Saludable"
+                    elif mor_val <= 5:
+                        color = "off"
+                        status = "Aceptable"
+                    else:
+                        color = "inverse"
+                        status = "Alto Riesgo"
+                    
+                    st.metric(
+                        "📉 Morosidad",
+                        f"{mor_val:.2f}%",
+                        f"Riesgo: {status}",
+                        delta_color=color
+                    )
+                    st.caption("✅ Ideal: < 3%")
+                else:
+                    st.metric("📉 Morosidad", "N/D")
+            
+            with col_risk2:
+                # Cobertura de Provisiones
+                cobertura = bank_indicators[bank_indicators['nombre_del_indicador'] == 'COBERTURA DE LA CARTERA IMPRODUCTIVA']
+                if not cobertura.empty:
+                    cob_val = cobertura['valor_indicador'].iloc[0]
+                    color = "normal" if cob_val >= 100 else "inverse"
+                    status = "Adecuada" if cob_val >= 100 else "Insuficiente"
+                    
+                    st.metric(
+                        "🛡️ Cobertura",
+                        f"{cob_val:.2f}%",
+                        f"Estado: {status}",
+                        delta_color=color
+                    )
+                    st.caption("✅ Ideal: ≥ 100%")
+                else:
+                    st.metric("🛡️ Cobertura", "N/D")
+            
+            with col_risk3:
+                # Calidad de Cartera (Cartera Neta vs Total)
+                cartera_neta = bank_indicators[bank_indicators['nombre_del_indicador'] == 'CARTERA DE CRÉDITOS NETA']
+                cartera_bruta = bank_indicators[bank_indicators['nombre_del_indicador'].str.contains('CARTERA DE CRÉDITOS', na=False) & 
+                                               ~bank_indicators['nombre_del_indicador'].str.contains('NETA', na=False)]
+                
+                if not cartera_neta.empty:
+                    cartera_valor = cartera_neta['valor_indicador'].iloc[0]
+                    if not activos.empty:
+                        concentracion_cartera = (cartera_valor / activos['valor_indicador'].iloc[0]) * 100
+                        st.metric(
+                            "📊 Concentración Cartera",
+                            f"{concentracion_cartera:.1f}%",
+                            "Cartera/Activos"
+                        )
+                        st.caption("💡 Enfoque crediticio")
+                    else:
+                        st.metric(
+                            "💰 Cartera Neta",
+                            f"${cartera_valor:,.0f}",
+                            "Volumen crediticio"
+                        )
+                else:
+                    st.metric("📊 Calidad Cartera", "N/D")
+        
+        # =========================================================
+        # 📊 INDICADORES DE CRECIMIENTO Y SOSTENIBILIDAD
+        # =========================================================
+        with st.expander("📊 **Crecimiento y Sostenibilidad**", expanded=True):
+            st.markdown("**Evaluación de crecimiento equilibrado y sostenibilidad a largo plazo**")
+            
+            col_grow1, col_grow2, col_grow3 = st.columns(3)
+            
+            with col_grow1:
+                # Tamaño relativo del banco
+                if not activos.empty:
+                    # Comparar con la mediana del sistema
+                    activos_sistema = df[df['nombre_del_indicador'] == 'TOTAL ACTIVO']['valor_indicador'].median()
+                    tamano_relativo = (activos['valor_indicador'].iloc[0] / activos_sistema) * 100
+                    
+                    if tamano_relativo >= 100:
+                        categoria_tam = "Grande"
+                        color = "normal"
+                    elif tamano_relativo >= 50:
+                        categoria_tam = "Mediano"
+                        color = "normal"
+                    else:
+                        categoria_tam = "Pequeño"
+                        color = "off"
+                    
+                    st.metric(
+                        "📏 Tamaño Relativo",
+                        f"{tamano_relativo:.0f}%",
+                        f"vs mediana ({categoria_tam})",
+                        delta_color=color
+                    )
+                    st.caption("💡 Posición en el mercado")
+                else:
+                    st.metric("📏 Tamaño Relativo", "N/D")
+            
+            with col_grow2:
+                # Diversificación (ratio entre diferentes tipos de activos)
+                if not cartera_neta.empty and not activos.empty:
+                    diversificacion = (cartera_neta['valor_indicador'].iloc[0] / activos['valor_indicador'].iloc[0]) * 100
+                    
+                    if 50 <= diversificacion <= 80:
+                        status = "Equilibrada"
+                        color = "normal"
+                    else:
+                        status = "Concentrada"
+                        color = "off"
+                    
+                    st.metric(
+                        "🎯 Enfoque Crediticio",
+                        f"{diversificacion:.1f}%",
+                        f"Diversificación: {status}",
+                        delta_color=color
+                    )
+                    st.caption("💡 Balance operativo")
+                else:
+                    st.metric("🎯 Enfoque Crediticio", "N/D")
+            
+            with col_grow3:
+                # Sustentabilidad (ROE/Morosidad ratio)
+                if not roe.empty and not morosidad.empty:
+                    sostenibilidad_ratio = roe['valor_indicador'].iloc[0] / max(morosidad['valor_indicador'].iloc[0], 0.1)
+                    
+                    if sostenibilidad_ratio >= 5:
+                        status = "Alta"
+                        color = "normal"
+                    elif sostenibilidad_ratio >= 2:
+                        status = "Media"
+                        color = "off"
+                    else:
+                        status = "Baja"
+                        color = "inverse"
+                    
+                    st.metric(
+                        "🌱 Sostenibilidad",
+                        f"{sostenibilidad_ratio:.1f}x",
+                        f"Capacidad: {status}",
+                        delta_color=color
+                    )
+                    st.caption("💡 ROE/Morosidad ratio")
+                else:
+                    st.metric("🌱 Sostenibilidad", "N/D")
         
         st.markdown("---")
         
