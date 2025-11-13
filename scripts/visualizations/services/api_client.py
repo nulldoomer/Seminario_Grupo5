@@ -146,6 +146,51 @@ class BankApiClient:
 
         return pd.DataFrame()
 
+
+    def get_system_alerts(self, severity: Optional[str] = None):
+        """Obtiene alertas del sistema"""
+        params = {"severity": severity} if severity else {}
+        response = requests.get(
+            f"{self.base_url}/advanced/alerts",
+            params=params
+        )
+        return response.json()
+    
+    def get_market_concentration(self, metric: str = "TOTAL ACTIVO"):
+        """Obtiene análisis de concentración"""
+        response = requests.get(
+            f"{self.base_url}/advanced/concentration",
+            params={"metric": metric}
+        )
+        return response.json()
+    
+    def get_peer_groups(self, size_metric: str = "TOTAL ACTIVO"):
+        """Obtiene peer groups"""
+        response = requests.get(
+            f"{self.base_url}/advanced/peer-groups",
+            params={"size_metric": size_metric}
+        )
+        return response.json()
+    
+    def get_correlations(self):
+        """Obtiene matriz de correlaciones"""
+        response = requests.get(f"{self.base_url}/advanced/correlations")
+        return response.json()
+    
+    def get_benchmark_analysis(self, bank_name: str, benchmark_type: str = "system_average"):
+        """Obtiene análisis de benchmark para un banco"""
+        response = requests.get(
+            f"{self.base_url}/advanced/benchmark/{bank_name}",
+            params={"benchmark_type": benchmark_type}
+        )
+        return response.json()
+    
+    def get_system_overview(self):
+        """Obtiene overview general del sistema"""
+        response = requests.get(f"{self.base_url}/advanced/overview")
+        return response.json()
+
+
 @st.cache_resource
 def get_api_client(base_url: str = "http://localhost:8000") -> BankApiClient:
 

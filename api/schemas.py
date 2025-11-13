@@ -134,3 +134,63 @@ class ComparativeResponse(BaseModel):
                 "is_percentage": False
             }
         }
+
+class AlertsResponse(BaseModel):
+    """Respuesta de alertas del sistema"""
+    total_alerts: int
+    critical_count: int
+    high_count: int
+    medium_count: int
+    alerts: List[Dict]
+    summary: Dict
+
+
+class ConcentrationResponse(BaseModel):
+    """Análisis de concentración de mercado"""
+    metric: str
+    cr3: float
+    cr5: float
+    hhi: float
+    interpretation: str
+    top_banks: List[Dict]
+    concentration_level: str
+
+
+class PeerGroupResponse(BaseModel):
+    """Grupos de bancos por tamaño"""
+    size_metric: str
+    groups: Dict[str, List[str]]
+    total_groups: int
+    distribution: Dict[str, int]
+
+
+class BenchmarkResponse(BaseModel):
+    """Comparación con benchmarks"""
+    bank: str
+    benchmark_type: str
+    comparisons: Dict[str, Dict]
+    total_indicators: int
+
+
+class CorrelationResponse(BaseModel):
+    """Matriz de correlaciones"""
+    correlation_matrix: Dict
+    indicators: List[str]
+    strong_correlations: List[Dict]
+    total_indicators: int
+
+
+class DerivedIndicatorsResponse(BaseModel):
+    """Indicadores derivados y compuestos"""
+    total_indicators: int
+    derived_indicators: List[str]
+    composite_indices: List[str]
+    data: List[Dict]
+    filtered_by_bank: Optional[str]
+
+
+class SystemStatisticsResponse(BaseModel):
+    """Estadísticas del sistema"""
+    total_indicators: int
+    statistics: Dict[str, Dict[str, float]]
+    summary: Dict

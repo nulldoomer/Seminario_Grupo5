@@ -1,9 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
 
 from api.routes import financials_route
+from api.routes import advanced_analytics
 
 
 app = FastAPI(
@@ -32,6 +31,7 @@ def root():
     return {"message": "API funcionando"}
 
 app.include_router(financials_route.router)
+app.include_router(advanced_analytics.router)
 
 if __name__ == "__main__":
     import uvicorn
