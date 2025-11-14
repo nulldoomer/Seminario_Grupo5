@@ -47,7 +47,7 @@ else:
 # =========================================================
 @router.get("/alerts", response_model=AlertsResponse)
 def get_system_alerts(
-    severity: Optional[str] = Query(None, description="Filtrar por severidad: CRITICA, ALTA, MEDIA")
+    severity: Optional[str] = Query(None, description="Filtrar por severidad: CRITICA (o CRÍTICA), ALTA, MEDIA")
 ):
     """
     Genera alertas automáticas del sistema bancario
@@ -69,7 +69,15 @@ def get_system_alerts(
     # Filtrar por severidad si se especifica
     if severity:
         severity_upper = severity.upper()
-        alerts = [a for a in alerts if severity_upper in a.get('severidad', '')]
+        # Mapear entrada del usuario al formato real de severidad
+        severity_map = {
+            'CRITICA': 'CRÍTICA',
+            'CRÍTICA': 'CRÍTICA',
+            'ALTA': 'ALTA',
+            'MEDIA': 'MEDIA'
+        }
+        severity_to_find = severity_map.get(severity_upper, severity_upper)
+        alerts = [a for a in alerts if severity_to_find in a.get('severidad', '')]
     
     # Agrupar por severidad
     criticas = [a for a in alerts if "CRÍTICA" in a.get('severidad', '')]

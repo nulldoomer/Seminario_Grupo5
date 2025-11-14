@@ -1,13 +1,6 @@
-from components.indicator_config import IndicatorConfig
-from components.data_handler import DataHandler
-from components.metrics_calculator import MetricsCalculator
-from components.charts_builder import ChartBuilder
-from components.ui_components import UIComponents
-from components.advanced_metrics import AdvancedMetrics
-from components.analysis_engine import TrendAnalysis, AlertRenderer
+from typing import List, Optional
 
-from data_loader import VisualizationDataLoader 
-from services.api_client import BankApiClient, get_api_client
+from services.api_client import  get_api_client
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -23,97 +16,145 @@ st.set_page_config(
 )
 
 # =========================================================
-# 🔌 CONFIGURACIÓN DE API CLIENT
-# =========================================================
-# Sidebar para configurar conexión a API
-with st.sidebar:
-    st.header("🔌 Configuración API")
-    
-    # Toggle para usar API o datos locales
-    use_api = st.toggle("🌐 Usar API REST", value=False, help="Activar para consumir datos desde la API")
-    
-    if use_api:
-        api_base_url = st.text_input(
-            "🔗 URL Base API",
-            value="http://localhost:8000",
-            help="URL del servidor FastAPI"
-        )
-        
-        # Inicializar cliente API
-        try:
-            api_client = get_api_client(api_base_url)
-            st.success("✅ API Client conectado")
-        except Exception as e:
-            st.error(f"❌ Error al conectar API: {e}")
-            use_api = False
-    
-    st.markdown("---")
-
-# =========================================================
-# 📁 INICIALIZACIÓN Y CARGA DE DATOS
+# 🔗 CONEXIÓN CON API
 # =========================================================
 @st.cache_resource
-def init_data_handler():
-    """Inicializa el DataHandler (se cachea para no recargar)"""
-    data_loader = VisualizationDataLoader()
-    return DataHandler(data_loader)
+def init_api_connection():
+    """Inicializa conexión con la API"""
+    try:
+        client = get_api_client()
+        # Test de conexión
+        test = client.get_banks_list("Balance")
+        if test:
+            return client, True
+        return client, False
+    except Exception as e:
+        st.error(f"Error conectando con API: {e}")
+        return None, False
 
-# Inicializar DataHandler
-dh = init_data_handler()
+api_client, api_connected = init_api_connection()
 
-# =========================================================
-# 🔄 FUNCIÓN PARA CARGAR DATOS (API o Local)
-# =========================================================
-def load_data_source():
-    """Carga datos desde API o fuente local según configuración"""
-    if use_api:
-        try:
-            # Obtener overview desde API
-            overview_data = api_client.get_system_overview()
-            st.sidebar.info(f"📊 Datos API: {overview_data['general_statistics']['total_banks']} bancos")
-            
-            # Cargar datos locales para enriquecimiento
-            df = dh.load_data("Final Dataframe")
-            return df, True  # df, usando_api
-        except Exception as e:
-            st.sidebar.warning(f"⚠️ Error API, usando datos locales: {e}")
-            df = dh.load_data("Final Dataframe")
-            return df, False
-    else:
-        df = dh.load_data("Final Dataframe")
-        return df, False
-
-# Cargar datos
-df, api_activa = load_data_source()
-
-if df is None:
-    st.error("❌ Error al cargar los datos")
+if not api_connected or api_client is None:
+    st.error("❌ No se pudo conectar con la API. Verifica que el servidor esté corriendo.")
+    st.info("💡 Inicia el servidor con: `uvicorn main:app --reload`")
     st.stop()
 
 # =========================================================
-# 🔧 ENRIQUECIMIENTO DE DATOS CON MÉTRICAS AVANZADAS
+# 📁 FUNCIONES DE CARGA DE DATOS
 # =========================================================
-@st.cache_data
-def enrich_data_with_advanced_metrics(df):
-    """Enriquece los datos con indicadores derivados y métricas avanzadas"""
-    df_enriched = AdvancedMetrics.calculate_derived_indicators(df)
-    df_final = AdvancedMetrics.calculate_composite_indices(df_enriched)
-    return df_final
+@st.cache_data(ttl=300)  # Cache por 5 minutos
+def load_system_overview():
+    """Carga resumen general del sistema"""
+    try:
+        return api_client.get_system_overview()
+    except Exception as e:
+        st.error(f"Error cargando overview: {e}")
+        return None
 
-# Enriquecer datos
-df = enrich_data_with_advanced_metrics(df)
+@st.cache_data(ttl=300)
+def load_banks_list(category: str = "Balance"):
+    """Carga lista de bancos"""
+    try:
+        return api_client.get_banks_list(category)
+    except Exception as e:
+        st.error(f"Error cargando bancos: {e}")
+        return []
+
+@st.cache_data(ttl=300)
+def load_indicators_list(category: str):
+    """Carga lista de indicadores"""
+    try:
+        response = api_client.get_indicators_list(category)
+        return response.get("indicators", []) if response else []
+    except Exception as e:
+        st.error(f"Error cargando indicadores: {e}")
+        return []
+
+@st.cache_data(ttl=300)
+def load_comparative_table(category: str, banks: Optional[List[str]] = None):
+    """Carga tabla comparativa"""
+    try:
+        response = api_client.get_comparative_table(category, banks)
+        if response and "data" in response:
+            return pd.DataFrame.from_dict(response["data"], orient='index')
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error cargando tabla comparativa: {e}")
+        return pd.DataFrame()
+
+@st.cache_data(ttl=300)
+def load_ranking(kpi: str, category: str, ascending: bool = False):
+    """Carga ranking de bancos"""
+    try:
+        response = api_client.get_ranking(kpi, category, ascending)
+        if response and "ranking" in response:
+            return pd.DataFrame(response["ranking"])
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error cargando ranking: {e}")
+        return pd.DataFrame()
+
+@st.cache_data(ttl=300)
+def load_bank_financials(bank_name: str, category: str):
+    """Carga datos financieros de un banco"""
+    try:
+        response = api_client.get_bank_financials(bank_name, category)
+        if response and "data" in response:
+            return pd.DataFrame(response["data"]), response
+        return pd.DataFrame(), None
+    except Exception as e:
+        st.error(f"Error cargando datos del banco: {e}")
+        return pd.DataFrame(), None
+
+@st.cache_data(ttl=300)
+def load_alerts():
+    """Carga alertas del sistema"""
+    try:
+        return api_client.get_system_alerts()
+    except Exception as e:
+        st.error(f"Error cargando alertas: {e}")
+        return None
+
+@st.cache_data(ttl=300)
+def load_concentration(metric: str = "TOTAL ACTIVO"):
+    """Carga análisis de concentración"""
+    try:
+        return api_client.get_market_concentration(metric)
+    except Exception as e:
+        st.error(f"Error cargando concentración: {e}")
+        return None
+
+@st.cache_data(ttl=300)
+def load_peer_groups(size_metric: str = "TOTAL ACTIVO"):
+    """Carga peer groups"""
+    try:
+        return api_client.get_peer_groups(size_metric)
+    except Exception as e:
+        st.error(f"Error cargando peer groups: {e}")
+        return None
+
+@st.cache_data(ttl=300)
+def load_correlations():
+    """Carga matriz de correlaciones"""
+    try:
+        return api_client.get_correlations()
+    except Exception as e:
+        st.error(f"Error cargando correlaciones: {e}")
+        return None
+
+@st.cache_data(ttl=300)
+def load_benchmark_analysis(bank_name: str, benchmark_type: str = "system_average"):
+    """Carga análisis de benchmark"""
+    try:
+        return api_client.get_benchmark_analysis(bank_name, benchmark_type)
+    except Exception as e:
+        st.error(f"Error cargando benchmark: {e}")
+        return None
 
 # =========================================================
 # 🎨 ENCABEZADO
 # =========================================================
 st.title("💰 Dashboard de Salud Financiera Bancaria")
-
-# Mostrar badge de fuente de datos
-if api_activa:
-    st.success("🌐 **Modo:** Consumiendo datos desde API REST")
-else:
-    st.info("💾 **Modo:** Usando datos locales")
-
 st.markdown("""
 **Análisis integral del Sistema Bancario Ecuatoriano**  
 Dashboard interactivo para evaluar indicadores de Balance, Rendimiento y Estructura Financiera.
@@ -122,111 +163,111 @@ Dashboard interactivo para evaluar indicadores de Balance, Rendimiento y Estruct
 # =========================================================
 # 📑 PESTAÑAS PRINCIPALES
 # =========================================================
-tab_overview, tab_categoria, tab_especifico, tab_api_advanced = st.tabs([
+tab_overview, tab_categoria, tab_especifico = st.tabs([
     "📊 Overview General", 
     "🎯 Análisis por Categoría", 
-    "🏦 Análisis Específico por Banco",
-    "🚀 API Analytics Avanzados"  # ✅ NUEVA PESTAÑA
+    "🏦 Análisis Específico por Banco"
 ])
 
-# Configurar sidebar común
+# =========================================================
+# 🔧 SIDEBAR - Panel de Control
+# =========================================================
 with st.sidebar:
     st.header("🔍 Panel de Control")
+    
+    # Estado de conexión
+    st.subheader("🔗 Estado del Sistema")
+    if api_connected:
+        st.success("✅ API Conectado")
+        st.caption(f"🌐 {api_client.base_url}")
+        if st.button("🔄 Recargar Datos"):
+            st.cache_data.clear()
+            st.rerun()
+    
     st.markdown("---")
     
-    total_bancos_sistema = df["banks"].nunique()
-    total_indicadores_sistema = df["nombre_del_indicador"].nunique()
+    # Cargar overview básico
+    overview_data = load_system_overview()
     
-    st.caption(f"🏦 **Total Bancos:** {total_bancos_sistema}")
-    st.caption(f"📊 **Total Indicadores:** {total_indicadores_sistema}")
-    st.caption(f"📅 **Periodo:** Septiembre 2025")
+    if overview_data:
+        gen_stats = overview_data.get("general_statistics", {})
+        st.caption(f"🏦 **Total Bancos:** {gen_stats.get('total_banks', 'N/D')}")
+        st.caption(f"📊 **Total Indicadores:** {gen_stats.get('total_indicators', 'N/D')}")
+        st.caption(f"📅 **Periodo:** Septiembre 2025")
 
 # =========================================================
-# 📊 TAB 1: OVERVIEW GENERAL (SIN CAMBIOS)
+# 📊 TAB 1: OVERVIEW GENERAL
 # =========================================================
 with tab_overview:
     st.header("📊 Overview General del Sistema Bancario")
     st.markdown("**Vista panorámica de todos los indicadores y bancos del sistema**")
     
-    calc = MetricsCalculator()
-    ui = UIComponents()
+    # Cargar datos del overview
+    overview = load_system_overview()
     
-    # ===== SECCIÓN: Estadísticas Generales =====
-    st.subheader("📈 Estadísticas Generales del Sistema")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("🏦 Total Bancos", f"{total_bancos_sistema}", "en el sistema")
-    
-    with col2:
-        st.metric("📊 Total Indicadores", f"{total_indicadores_sistema}", "métricas disponibles")
-    
-    with col3:
-        total_observaciones = len(df)
-        st.metric("📋 Total Observaciones", f"{total_observaciones:,}", "registros de datos")
-    
-    with col4:
-        completitud = ((df['valor_indicador'].notna().sum() / len(df)) * 100)
-        st.metric("✅ Completitud de Datos", f"{completitud:.1f}%", "datos disponibles")
-    
-    st.markdown("---")
-    
-    # ===== SECCIÓN: Estadísticas Clave =====
-    st.subheader("📊 Estadísticas Clave del Sistema")
-    
-    col_stats1, col_stats2 = st.columns(2)
-    
-    with col_stats1:
-        st.markdown("**💰 Indicadores Financieros Principales**")
+    if overview:
+        gen_stats = overview.get("general_statistics", {})
+        concentration = overview.get("concentration", {})
+        alerts_summary = overview.get("alerts", {})
+        top_performers = overview.get("top_performers", {})
         
-        activos_data = df[df['nombre_del_indicador'] == 'TOTAL ACTIVO']
-        if not activos_data.empty:
-            activos_sistema = activos_data['valor_indicador'].sum()
-            st.metric("💰 Activos Totales Sistema", f"${activos_sistema:,.0f}")
+        # =========================================================
+        # 📈 ESTADÍSTICAS GENERALES
+        # =========================================================
+        st.subheader("📈 Estadísticas Generales del Sistema")
         
-        roe_sistema = df[df['nombre_del_indicador'] == 'RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO']
-        if not roe_sistema.empty:
-            roe_promedio = roe_sistema['valor_indicador'].mean()
-            st.metric("📈 ROE Promedio Sistema", f"{roe_promedio:.2f}%")
+        col1, col2, col3, col4 = st.columns(4)
         
-        roa_sistema = df[df['nombre_del_indicador'] == 'RESULTADOS DEL EJERCICIO / ACTIVO PROMEDIO']
-        if not roa_sistema.empty:
-            roa_promedio = roa_sistema['valor_indicador'].mean()
-            st.metric("📊 ROA Promedio Sistema", f"{roa_promedio:.2f}%")
-    
-    with col_stats2:
-        st.markdown("**🏦 Concentración y Distribución**")
+        with col1:
+            st.metric(
+                "🏦 Total Bancos",
+                f"{gen_stats.get('total_banks', 0)}",
+                "en el sistema"
+            )
         
-        if not activos_data.empty:
-            top3_activos = activos_data.nlargest(3, 'valor_indicador')['valor_indicador'].sum()#type:ignore
-            concentracion_top3 = (top3_activos / activos_sistema * 100) if activos_sistema > 0 else 0  #type:ignore
-            st.metric("🏆 Concentración Top 3", f"{concentracion_top3:.1f}%")
+        with col2:
+            st.metric(
+                "📊 Total Indicadores",
+                f"{gen_stats.get('total_indicators', 0)}",
+                "métricas disponibles"
+            )
         
-        if not activos_data.empty:
-            mediana_activos = activos_data['valor_indicador'].median()#type:ignore
-            st.metric("📊 Banco Mediano (Activos)", f"${mediana_activos:,.0f}")
+        with col3:
+            activos_sistema = gen_stats.get('total_assets_system', 0)
+            st.metric(
+                "💰 Activos Sistema",
+                f"${activos_sistema:,.0f}",
+                "total del sistema"
+            )
         
-        if not roe_sistema.empty:
-            cv_roe = (roe_sistema['valor_indicador'].std() / roe_sistema['valor_indicador'].mean() * 100)
-            st.metric("📈 Variabilidad ROE", f"{cv_roe:.1f}%")
-    
-    st.markdown("---")
-    
-    # ===== SECCIÓN: Concentración =====
-    st.subheader("🎯 Análisis de Concentración del Mercado")
-    
-    concentration_data = TrendAnalysis.calculate_concentration_risk(df)
-    
-    if concentration_data:
+        with col4:
+            roe_promedio = gen_stats.get('average_roe', 0)
+            st.metric(
+                "📈 ROE Promedio",
+                f"{roe_promedio:.2f}%",
+                "rentabilidad sistema"
+            )
+        
+        st.markdown("---")
+        
+        # =========================================================
+        # 🎯 CONCENTRACIÓN DEL MERCADO
+        # =========================================================
+        st.subheader("🎯 Análisis de Concentración del Mercado")
+        
         col_conc1, col_conc2 = st.columns([2, 1])
         
         with col_conc1:
-            hhi = concentration_data.get('hhi', 0)
-            concentration_level = concentration_data.get('concentration_level', 'Desconocido')
+            hhi = concentration.get('hhi', 0)
+            conc_level = concentration.get('concentration_level', 'N/D')
             
-            st.metric("📊 Índice HHI", f"{hhi:.0f}", f"Concentración: {concentration_level}")
+            st.metric(
+                "📊 Índice HHI",
+                f"{hhi:.0f}",
+                f"Concentración: {conc_level}"
+            )
             
+            # Interpretación
             if hhi < 1500:
                 st.success("✅ Mercado no concentrado (HHI < 1500)")
             elif hhi < 2500:
@@ -235,400 +276,562 @@ with tab_overview:
                 st.error("🚨 Mercado altamente concentrado (HHI ≥ 2500)")
         
         with col_conc2:
-            if 'top_banks' in concentration_data:
+            # Cargar datos detallados de concentración
+            conc_data = load_concentration("TOTAL ACTIVO")
+            if conc_data and 'top_banks' in conc_data:
                 st.markdown("**🏆 Top 5 Participación**")
-                for i, bank_info in enumerate(concentration_data['top_banks'][:5]):#type:ignore
-                    bank_name = bank_info['bank']
-                    market_share = bank_info['market_share']
-                    st.metric(f"{i+1}. {bank_name[:12]}...", f"{market_share:.1f}%", "participación")
-    
-    st.markdown("---")
-    
-    # ===== SECCIÓN: Top Performers =====
-    st.subheader("🏆 Top Performers del Sistema")
-    
-    if not activos_data.empty:
-        col_chart1, col_metrics1 = st.columns([3, 1])
+                for i, bank in enumerate(conc_data['top_banks'][:5]):
+                    bank_name = bank.get('banks', 'N/D')
+                    valor = bank.get('valor_indicador', 0)
+                    st.caption(f"{i+1}. {bank_name[:15]}: ${valor:,.0f}")
         
-        with col_chart1:
-            top_activos = activos_data.nlargest(10, 'valor_indicador')#type:ignore
+        st.markdown("---")
+        
+        # =========================================================
+        # 🏆 TOP PERFORMERS
+        # =========================================================
+        st.subheader("🏆 Top Performers del Sistema")
+        
+        col_top1, col_top2 = st.columns(2)
+        
+        with col_top1:
+            st.markdown("**💰 Top 5 por Activos**")
+            by_assets = top_performers.get('by_assets', [])
             
-            fig1 = px.bar(
-                top_activos,
-                x='banks',
-                y='valor_indicador',
-                title="Top 10 Bancos por Activos Totales",
-                labels={'valor_indicador': 'Activos Totales ($)', 'banks': 'Bancos'},
-                color='valor_indicador',
-                color_continuous_scale='Blues'
-            )
-            fig1.update_layout(xaxis_tickangle=-45)
-            st.plotly_chart(fig1, use_container_width=True)
+            if by_assets:
+                # Crear dataframe para gráfico
+                df_assets = pd.DataFrame(by_assets)
+                
+                fig1 = px.bar(
+                    df_assets,
+                    x='banks',
+                    y='valor_indicador',
+                    title="Top 5 Bancos por Activos Totales",
+                    color='valor_indicador',
+                    color_continuous_scale='Blues',
+                    labels={'valor_indicador': 'Activos ($)', 'banks': 'Bancos'}
+                )
+                fig1.update_layout(xaxis_tickangle=-45, showlegend=False)
+                st.plotly_chart(fig1, use_container_width=True)
         
-        with col_metrics1:
-            st.markdown("**🥇 Top 3 Activos**")
-            for i, (_, row) in enumerate(top_activos.head(3).iterrows()):
-                st.metric(f"{i+1}. {row['banks'][:12]}", f"${row['valor_indicador']:,.0f}", f"Posición #{i+1}")
-    
-    if not roe_sistema.empty:
-        col_chart2, col_metrics2 = st.columns([3, 1])
-        
-        with col_chart2:
-            top_roe = roe_sistema.nlargest(10, 'valor_indicador')#type:ignore
+        with col_top2:
+            st.markdown("**📈 Top 5 por ROE**")
+            by_roe = top_performers.get('by_roe', [])
             
-            fig2 = px.bar(
-                top_roe,
-                x='banks',
-                y='valor_indicador',
-                title="Top 10 Bancos por ROE (%)",
-                labels={'valor_indicador': 'ROE (%)', 'banks': 'Bancos'},
-                color='valor_indicador',
-                color_continuous_scale='Greens'
-            )
-            fig2.update_layout(xaxis_tickangle=-45)
-            st.plotly_chart(fig2, use_container_width=True)
+            if by_roe:
+                df_roe = pd.DataFrame(by_roe)
+                
+                fig2 = px.bar(
+                    df_roe,
+                    x='banks',
+                    y='valor_indicador',
+                    title="Top 5 Bancos por ROE (%)",
+                    color='valor_indicador',
+                    color_continuous_scale='Greens',
+                    labels={'valor_indicador': 'ROE (%)', 'banks': 'Bancos'}
+                )
+                fig2.update_layout(xaxis_tickangle=-45, showlegend=False)
+                st.plotly_chart(fig2, use_container_width=True)
         
-        with col_metrics2:
-            st.markdown("**📊 Top 3 ROE**")
-            for i, (_, row) in enumerate(top_roe.head(3).iterrows()):
-                st.metric(f"{i+1}. {row['banks'][:12]}", f"{row['valor_indicador']:.2f}%", f"ROE #{i+1}")
-    
-    st.markdown("---")
-    
-    # Resto del código del tab_overview permanece igual...
-    # (Peer Groups, Participación de Mercado, Correlaciones, etc.)
+        st.markdown("---")
+        
+        # =========================================================
+        # 🏦 PEER GROUPS
+        # =========================================================
+        st.subheader("🏦 Distribución por Tamaño de Bancos")
+        
+        peer_data = load_peer_groups("TOTAL ACTIVO")
+        
+        if peer_data and 'groups' in peer_data:
+            col_pie, col_details = st.columns([2, 1])
+            
+            with col_pie:
+                distribution = peer_data.get('distribution', {})
+                
+                fig_pie = go.Figure(data=[go.Pie(
+                    labels=list(distribution.keys()),
+                    values=list(distribution.values()),
+                    hole=0.3,
+                    textinfo='label+percent'
+                )])
+                fig_pie.update_layout(title="Distribución de Bancos por Tamaño")
+                st.plotly_chart(fig_pie, use_container_width=True)
+            
+            with col_details:
+                st.markdown("**📋 Detalle por Grupo**")
+                groups = peer_data.get('groups', {})
+                for group_name, banks_list in groups.items():
+                    with st.expander(f"{group_name} ({len(banks_list)})"):
+                        for bank in banks_list[:10]:  # Limitar a 10
+                            st.write(f"• {bank}")
+        
+        st.markdown("---")
+        
+        # =========================================================
+        # 🔗 CORRELACIONES
+        # =========================================================
+        st.subheader("🔗 Análisis de Correlaciones entre Indicadores")
+        
+        corr_data = load_correlations()
+        
+        if corr_data and 'correlation_matrix' in corr_data:
+            corr_matrix = pd.DataFrame(corr_data['correlation_matrix'])
+            
+            col_heatmap, col_insights = st.columns([3, 1])
+            
+            with col_heatmap:
+                fig_corr = go.Figure(data=go.Heatmap(
+                    z=corr_matrix.values,
+                    x=corr_matrix.columns,
+                    y=corr_matrix.index,
+                    colorscale='RdBu',
+                    zmid=0,
+                    text=corr_matrix.round(2).values,
+                    texttemplate="%{text}",
+                    textfont={"size": 10},
+                    colorbar=dict(title="Correlación")
+                ))
+                
+                fig_corr.update_layout(
+                    title="Matriz de Correlación - Indicadores Principales",
+                    xaxis_tickangle=-45,
+                    height=500
+                )
+                
+                st.plotly_chart(fig_corr, use_container_width=True)
+            
+            with col_insights:
+                st.markdown("**🧠 Correlaciones Destacadas**")
+                
+                strong_corr = corr_data.get('strong_correlations', [])
+                if strong_corr:
+                    for corr in strong_corr[:5]:
+                        ind1 = corr['indicator1'][:15]
+                        ind2 = corr['indicator2'][:15]
+                        val = corr['correlation']
+                        st.metric(
+                            f"{ind1}... × {ind2}...",
+                            f"{val:.2f}",
+                            corr['strength']
+                        )
+                else:
+                    st.info("No hay correlaciones fuertes")
+        
+        st.markdown("---")
+        
+        # =========================================================
+        # 🚨 ALERTAS DEL SISTEMA
+        # =========================================================
+        st.subheader("🚨 Alertas del Sistema")
+        
+        alerts = load_alerts()
+        
+        if alerts:
+            col_alert1, col_alert2, col_alert3 = st.columns(3)
+            
+            with col_alert1:
+                st.metric(
+                    "🔴 Alertas Críticas",
+                    alerts.get('critical_count', 0),
+                    "requieren atención inmediata"
+                )
+            
+            with col_alert2:
+                st.metric(
+                    "🟠 Alertas Altas",
+                    alerts.get('high_count', 0),
+                    "monitorear de cerca"
+                )
+            
+            with col_alert3:
+                st.metric(
+                    "🟡 Alertas Medias",
+                    alerts.get('medium_count', 0),
+                    "seguimiento normal"
+                )
+            
+            # Mostrar alertas críticas
+        alert_list = alerts.get("alerts", [])
+
+        # Filtrar solo las críticas
+        critical_alerts = [a for a in alert_list if a.get("severidad") == "🔴 CRÍTICA"]
+
+        if critical_alerts:
+            st.markdown("**🔴 Alertas Críticas Activas:**")
+            for alert in critical_alerts[:5]:  # Mostrar primeras 5
+                st.error(f"🚨 {alert.get('descripcion', 'N/D')}")
+                
+                # Mostrar detalles opcionales
+                st.caption(f"🏦 Banco: {alert.get('banco', 'N/D')}")
+                st.caption(f"📊 Indicador: {alert.get('indicador', 'N/D')}")
+                st.caption(f"📉 Valor: {alert.get('valor', 'N/D')}")
 
 # =========================================================
-# 🎯 TAB 2: ANÁLISIS POR CATEGORÍA (SIN CAMBIOS)
+# 🎯 TAB 2: ANÁLISIS POR CATEGORÍA
 # =========================================================
 with tab_categoria:
     st.header("🎯 Análisis por Categoría Específica")
     
+    # Selector de categoría
     categoria = st.selectbox(
         "📈 Selecciona Categoría de Análisis:",
-        ["Balance", "Rendimiento", "Estructura", "Calidad_Riesgo", "Eficiencia", "Crecimiento"],
+        ["Balance", "Rendimiento", "Estructura"],
         help="Análisis detallado por tipo de indicadores"
     )
-    
-    is_percentage = IndicatorConfig.is_category_percentage(categoria)
-    unit = IndicatorConfig.get_category_unit(categoria)
-    indicator_names = IndicatorConfig.get_indicator_names_by_category(categoria)
     
     # Mostrar info según categoría
     if categoria == "Balance":
         st.info("💼 **Balance:** Activos y recursos del banco")
     elif categoria == "Rendimiento":
         st.info("📊 **Rendimiento:** Rentabilidad y eficiencia")
+    else:
+        st.info("🏗️ **Estructura:** Composición financiera")
     
-    df_filtrado = dh.filter_by_category(
-        indicator_names=indicator_names,
-        convert_percentage=is_percentage
-    )
+    # Cargar indicadores de la categoría
+    indicadores = load_indicators_list(categoria)
+    bancos = load_banks_list(categoria)
     
-    if df_filtrado.empty:
-        st.error(f"⚠️ No hay datos para la categoría {categoria}")
+    if not indicadores:
+        st.error("No hay indicadores disponibles para esta categoría")
         st.stop()
     
-    bancos = dh.get_unique_values(df_filtrado, "banks")
-    indicadores = dh.get_unique_values(df_filtrado, "nombre_del_indicador")
+    # =========================================================
+    # 📊 MÉTRICAS DE LA CATEGORÍA
+    # =========================================================
+    st.subheader(f"📊 Estadísticas de {categoria}")
     
-    # Resto del código del tab_categoria permanece igual...
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("🏦 Total Bancos", len(bancos))
+    
+    with col2:
+        st.metric("📊 Total Indicadores", len(indicadores))
+    
+    with col3:
+        # Cargar tabla comparativa para estadísticas
+        comp_df = load_comparative_table(categoria)
+        if not comp_df.empty:
+            st.metric("📋 Datos Disponibles", f"{len(comp_df) * len(comp_df.columns)}")
+    
+    st.markdown("---")
+    
+    # =========================================================
+    # 🏆 RANKINGS DINÁMICOS
+    # =========================================================
+    st.subheader(f"🏆 Rankings Dinámicos - {categoria}")
+    
+    selected_indicator = st.selectbox(
+        "📊 Selecciona Indicador para Ranking:",
+        indicadores,
+        help="Elige qué indicador quieres analizar"
+    )
+    
+    # Cargar ranking
+    ranking_df = load_ranking(selected_indicator, categoria, ascending=False)
+    
+    if not ranking_df.empty:
+        col_chart, col_metrics = st.columns([3, 1])
+        
+        with col_chart:
+            fig_rank = px.bar(
+                ranking_df.head(10),
+                x='banks',
+                y='valor_indicador',
+                title=f"Top 10 - {selected_indicator}",
+                color='valor_indicador',
+                color_continuous_scale='viridis',
+                labels={'valor_indicador': selected_indicator, 'banks': 'Bancos'}
+            )
+            fig_rank.update_layout(xaxis_tickangle=-45, showlegend=False)
+            st.plotly_chart(fig_rank, use_container_width=True)
+        
+        with col_metrics:
+            st.markdown("**🎖️ Top 3**")
+            
+            for i, row in ranking_df.head(3).iterrows():
+                medal = ["🥇", "🥈", "🥉"][i] if i < 3 else f"#{i+1}" #type:ignore
+                st.metric(
+                    f"{medal} {row['banks'][:15]}",
+                    f"{row['valor_indicador']:.2f}"
+                )
+    
+    st.markdown("---")
+    
+    # =========================================================
+    # 📋 TABLA COMPARATIVA
+    # =========================================================
+    st.subheader(f"📊 Matriz Comparativa - {categoria}")
+    
+    pivot_df = load_comparative_table(categoria)
+    
+    if not pivot_df.empty:
+        # Aplicar formato
+        styled_df = (
+            pivot_df.style
+            .format("{:.2f}")
+            .background_gradient(cmap="RdYlGn", axis=0)
+            .set_properties(**{'text-align': 'right'})
+        )
+        
+        st.dataframe(styled_df, use_container_width=True, height=400)
+        
+        # Descarga
+        csv = pivot_df.to_csv()
+        st.download_button(
+            label="📥 Descargar Matriz CSV",
+            data=csv,
+            file_name=f'matriz_{categoria.lower()}.csv',
+            mime='text/csv'
+        )
 
 # =========================================================
-# 🏦 TAB 3: ANÁLISIS ESPECÍFICO (SIN CAMBIOS)
+# 🏦 TAB 3: ANÁLISIS ESPECÍFICO POR BANCO
 # =========================================================
 with tab_especifico:
     st.header("🏦 Análisis Específico por Banco")
+    st.markdown("**Análisis individual detallado con comparaciones específicas**")
     
-    banco_disponible = dh.get_unique_values(df, "banks")
-    selected_bank = st.selectbox(
-        "🏦 Selecciona Banco para Análisis:",
-        banco_disponible,
-        help="Escoge un banco para análisis detallado individual"
-    )
+    # Cargar lista de bancos
+    bancos_disponibles = load_banks_list("Balance")
     
-    # Resto del código del tab_especifico permanece igual...
-
-# =========================================================
-# 🚀 TAB 4: API ANALYTICS AVANZADOS (NUEVA)
-# =========================================================
-with tab_api_advanced:
-    st.header("🚀 API Analytics Avanzados")
-    
-    if not use_api:
-        st.warning("⚠️ **API no activada.** Por favor activa 'Usar API REST' en el sidebar para acceder a estas funcionalidades.")
-        st.info("💡 Los endpoints avanzados requieren conexión con el servidor FastAPI.")
+    if not bancos_disponibles:
+        st.error("No hay bancos disponibles")
         st.stop()
     
-    st.markdown("**Análisis avanzados mediante consumo directo de endpoints especializados**")
+    selected_bank = st.selectbox(
+        "🏦 Selecciona Banco para Análisis:",
+        bancos_disponibles,
+        help="Escoge un banco para análisis detallado"
+    )
     
-    # Sub-tabs para diferentes análisis
-    subtab1, subtab2, subtab3, subtab4, subtab5 = st.tabs([
-        "🚨 Alertas", 
-        "📊 Concentración", 
-        "🏦 Peer Groups",
-        "🔗 Correlaciones",
-        "📈 Benchmark"
-    ])
-    
-    # ===== SUB-TAB 1: ALERTAS DEL SISTEMA =====
-    with subtab1:
-        st.subheader("🚨 Sistema de Alertas Automáticas")
+    if selected_bank:
+        # Cargar datos de las 3 categorías
+        balance_df, balance_info = load_bank_financials(selected_bank, "Balance")
+        rendimiento_df, rend_info = load_bank_financials(selected_bank, "Rendimiento")
+        estructura_df, estr_info = load_bank_financials(selected_bank, "Estructura")
         
-        col_filter, col_refresh = st.columns([3, 1])
-        with col_filter:
-            severity_filter = st.selectbox(
-                "Filtrar por severidad:",
-                ["Todas", "CRITICA", "ALTA", "MEDIA"]
-            )
+        # =========================================================
+        # 📊 RESUMEN EJECUTIVO
+        # =========================================================
+        st.subheader(f"📊 Resumen Ejecutivo: {selected_bank}")
         
-        with col_refresh:
-            if st.button("🔄 Actualizar Alertas"):
-                st.rerun()
+        col1, col2, col3, col4 = st.columns(4)
         
-        try:
-            # Consumir endpoint de alertas
-            alerts_response = api_client.get_system_alerts(#type:ignore
-                severity=None if severity_filter == "Todas" else severity_filter
-            )
-            
-            # Mostrar resumen
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("🚨 Total Alertas", alerts_response['total_alerts'])
-            with col2:
-                st.metric("🔴 Críticas", alerts_response['critical_count'])
-            with col3:
-                st.metric("🟠 Altas", alerts_response['high_count'])
-            with col4:
-                st.metric("🟡 Medias", alerts_response['medium_count'])
-            
-            st.markdown("---")
-            
-            # Renderizar alertas
-            if alerts_response['alerts']:
-                for alert in alerts_response['alerts']:
-                    severidad = alert.get('severidad', '')
-                    
-                    if 'CRÍTICA' in severidad:
-                        st.error(f"🔴 **{alert.get('banco')}** - {alert.get('indicador')}")
-                        st.caption(f"Valor: {alert.get('valor')} | Umbral: {alert.get('umbral')}")
-                    elif 'ALTA' in severidad:
-                        st.warning(f"🟠 **{alert.get('banco')}** - {alert.get('indicador')}")
-                        st.caption(f"Valor: {alert.get('valor')} | Umbral: {alert.get('umbral')}")
-                    elif 'MEDIA' in severidad:
-                        st.info(f"🟡 **{alert.get('banco')}** - {alert.get('indicador')}")
-                        st.caption(f"Valor: {alert.get('valor')} | Umbral: {alert.get('umbral')}")
-            else:
-                st.success("✅ No se encontraron alertas en el sistema")
-                
-        except Exception as e:
-            st.error(f"❌ Error al obtener alertas: {e}")
-    
-    # ===== SUB-TAB 2: CONCENTRACIÓN DE MERCADO =====
-    with subtab2:
-        st.subheader("📊 Análisis de Concentración de Mercado")
+        with col1:
+            total_ind = 0
+            if balance_info:
+                total_ind += balance_info.get('total_indicators', 0)
+            if rend_info:
+                total_ind += rend_info.get('total_indicators', 0)
+            if estr_info:
+                total_ind += estr_info.get('total_indicators', 0)
+            st.metric("📊 Indicadores", total_ind)
         
-        metric_concentration = st.selectbox(
-            "Selecciona métrica:",
-            ["TOTAL ACTIVO", "OBLIGACIONES CON EL PÚBLICO", "CARTERA DE CRÉDITOS"]
-        )
-        
-        try:
-            # Consumir endpoint de concentración
-            concentration_response = api_client.get_market_concentration(metric=metric_concentration)#type:ignore
-            
-            # Mostrar métricas
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("📊 CR3", f"{concentration_response['cr3']:.2f}%", "Top 3 bancos")
-            with col2:
-                st.metric("📊 CR5", f"{concentration_response['cr5']:.2f}%", "Top 5 bancos")
-            with col3:
-                st.metric("📊 HHI", f"{concentration_response['hhi']:.0f}")
-            with col4:
-                interpretation = concentration_response['interpretation']
-                if 'Competitivo' in interpretation:
-                    st.success(f"✅ {interpretation}")
-                elif 'Moderadamente' in interpretation:
-                    st.warning(f"⚠️ {interpretation}")
+        with col2:
+            # Buscar activos totales
+            if not estructura_df.empty:
+                activo_row = estructura_df[estructura_df['nombre_del_indicador'] == 'TOTAL ACTIVO']
+                if not activo_row.empty:
+                    activo_val = activo_row['valor_indicador'].iloc[0]
+                    st.metric("💰 Activos", f"${activo_val:,.0f}")
                 else:
-                    st.error(f"🚨 {interpretation}")
-            
-            st.markdown("---")
-            
-            # Gráfico de top bancos
-            if concentration_response['top_banks']:
-                top_df = pd.DataFrame(concentration_response['top_banks'])
+                    st.metric("💰 Activos", "N/D")
+            else:
+                st.metric("💰 Activos", "N/D")
+        
+        with col3:
+            # Buscar ROE
+            if not rendimiento_df.empty:
+                roe_row = rendimiento_df[rendimiento_df['nombre_del_indicador'].str.contains('PATRIMONIO PROMEDIO', na=False)]
+                if not roe_row.empty:
+                    roe_val = roe_row['valor_indicador'].iloc[0]
+                    st.metric("📈 ROE", f"{roe_val:.2f}%")
+                else:
+                    st.metric("📈 ROE", "N/D")
+        
+        with col4:
+            # Posición en ranking
+            ranking_activos = load_ranking("TOTAL ACTIVO", "Estructura", False)
+            if not ranking_activos.empty:
+                posicion = ranking_activos.index[ranking_activos['banks'] == selected_bank].tolist()
+                if posicion:
+                    st.metric("🏆 Ranking Activos", f"#{posicion[0] + 1}")
+                else:
+                    st.metric("🏆 Ranking Activos", "N/D")
+        
+        st.markdown("---")
+        
+        # =========================================================
+        # 📈 ANÁLISIS POR CATEGORÍA DEL BANCO
+        # =========================================================
+        st.subheader(f"📈 Análisis Financiero: {selected_bank}")
+        
+        tab_bal, tab_rend, tab_estr = st.tabs(["💼 Balance", "📊 Rendimiento", "🏗️ Estructura"])
+        
+        with tab_bal:
+            if not balance_df.empty:
+                st.markdown("**💼 Indicadores de Balance**")
                 
+                # Gráfico de barras
                 fig = px.bar(
-                    top_df,
-                    x='banks',
+                    balance_df.head(10),
+                    x='nombre_del_indicador',
                     y='valor_indicador',
-                    title=f"Top 10 Bancos - {metric_concentration}",
+                    title="Principales Indicadores de Balance",
                     color='valor_indicador',
                     color_continuous_scale='Blues'
                 )
                 fig.update_layout(xaxis_tickangle=-45)
                 st.plotly_chart(fig, use_container_width=True)
                 
-        except Exception as e:
-            st.error(f"❌ Error al obtener concentración: {e}")
-    
-    # ===== SUB-TAB 3: PEER GROUPS =====
-    with subtab3:
-        st.subheader("🏦 Análisis de Peer Groups")
-        
-        try:
-            # Consumir endpoint de peer groups
-            peer_response = api_client.get_peer_groups()#type:ignore
-            
-            # Mostrar distribución
-            st.markdown("**📊 Distribución de Bancos por Tamaño**")
-            
-            distribution = peer_response['distribution']
-            
-            # Gráfico de pie
-            fig_pie = go.Figure(data=[go.Pie(
-                labels=list(distribution.keys()),
-                values=list(distribution.values()),
-                hole=0.3
-            )])
-            fig_pie.update_layout(title="Distribución por Peer Groups")
-            st.plotly_chart(fig_pie, use_container_width=True)
-            
-            st.markdown("---")
-            
-            # Mostrar detalle por grupo
-            for group_name, banks_list in peer_response['groups'].items():
-                with st.expander(f"📁 {group_name} ({len(banks_list)} bancos)"):
-                    cols = st.columns(3)
-                    for idx, bank in enumerate(banks_list):
-                        with cols[idx % 3]:
-                            st.write(f"• {bank}")
-                            
-        except Exception as e:
-            st.error(f"❌ Error al obtener peer groups: {e}")
-    
-    # ===== SUB-TAB 4: CORRELACIONES =====
-    with subtab4:
-        st.subheader("🔗 Matriz de Correlaciones")
-        
-        try:
-            # Consumir endpoint de correlaciones
-            corr_response = api_client.get_correlations()#type:ignore
-            
-            # Convertir a DataFrame
-            corr_df = pd.DataFrame(corr_response['correlation_matrix'])
-            
-            # Heatmap
-            fig_heatmap = go.Figure(data=go.Heatmap(
-                z=corr_df.values,
-                x=corr_df.columns,
-                y=corr_df.index,
-                colorscale='RdBu',
-                zmid=0,
-                text=corr_df.round(2).values,
-                texttemplate="%{text}",
-                colorbar=dict(title="Correlación")
-            ))
-            
-            fig_heatmap.update_layout(
-                title="Matriz de Correlación - Indicadores Principales",
-                height=600
-            )
-            st.plotly_chart(fig_heatmap, use_container_width=True)
-            
-            st.markdown("---")
-            
-            # Correlaciones fuertes
-            if corr_response['strong_correlations']:
-                st.markdown("**🔍 Correlaciones Destacadas (|r| > 0.7)**")
-                
-                for corr in corr_response['strong_correlations']:
-                    col1, col2, col3 = st.columns([2, 1, 2])
-                    with col1:
-                        st.write(f"**{corr['indicator1'][:20]}...**")
-                    with col2:
-                        if corr['correlation'] > 0:
-                            st.success(f"r = {corr['correlation']:.3f}")
-                        else:
-                            st.error(f"r = {corr['correlation']:.3f}")
-                    with col3:
-                        st.write(f"**{corr['indicator2'][:20]}...**")
-            else:
-                st.info("No se encontraron correlaciones fuertes")
-                
-        except Exception as e:
-            st.error(f"❌ Error al obtener correlaciones: {e}")
-    
-    # ===== SUB-TAB 5: BENCHMARK ANALYSIS =====
-    with subtab5:
-        st.subheader("📈 Análisis de Benchmark")
-        
-        col_bank_sel, col_bench_type = st.columns(2)
-        
-        with col_bank_sel:
-            banks_list_response = api_client.get_banks_list(category="Balance")#type:ignore
-            if banks_list_response:
-                selected_bank_bench = st.selectbox(
-                    "Selecciona Banco:",
-                    banks_list_response
+                # Tabla de datos
+                st.dataframe(
+                    balance_df.style.format({'valor_indicador': '{:,.2f}'}),
+                    use_container_width=True
                 )
             else:
-                selected_bank_bench = st.selectbox("Selecciona Banco:", banco_disponible)
+                st.info("No hay datos de Balance disponibles")
         
-        with col_bench_type:
-            benchmark_type = st.selectbox(
-                "Tipo de Benchmark:",
-                ["system_average", "top_quartile", "median"]
-            )
-        
-        if st.button("🔍 Analizar Benchmark"):
-            try:
-                # Consumir endpoint de benchmark
-                benchmark_response = api_client.get_benchmark_analysis(#type:ignore
-                    bank_name=selected_bank_bench,
-                    benchmark_type=benchmark_type
+        with tab_rend:
+            if not rendimiento_df.empty:
+                st.markdown("**📊 Indicadores de Rendimiento**")
+                
+                fig = px.bar(
+                    rendimiento_df.head(10),
+                    x='nombre_del_indicador',
+                    y='valor_indicador',
+                    title="Principales Indicadores de Rendimiento",
+                    color='valor_indicador',
+                    color_continuous_scale='Greens'
                 )
+                fig.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig, use_container_width=True)
                 
-                st.success(f"✅ Análisis completado para **{benchmark_response['bank']}**")
-                st.caption(f"Benchmark: {benchmark_response['benchmark_type']}")
+                st.dataframe(
+                    rendimiento_df.style.format({'valor_indicador': '{:,.2f}'}),
+                    use_container_width=True
+                )
+            else:
+                st.info("No hay datos de Rendimiento disponibles")
+        
+        with tab_estr:
+            if not estructura_df.empty:
+                st.markdown("**🏗️ Indicadores de Estructura**")
                 
-                st.markdown("---")
+                fig = px.bar(
+                    estructura_df.head(10),
+                    x='nombre_del_indicador',
+                    y='valor_indicador',
+                    title="Principales Indicadores de Estructura",
+                    color='valor_indicador',
+                    color_continuous_scale='Purples'
+                )
+                fig.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig, use_container_width=True)
                 
-                # Mostrar comparaciones
-                comparisons = benchmark_response['comparisons']
+                st.dataframe(
+                    estructura_df.style.format({'valor_indicador': '{:,.2f}'}),
+                    use_container_width=True
+                )
+            else:
+                st.info("No hay datos de Estructura disponibles")
+        
+        st.markdown("---")
+        
+        # =========================================================
+        # 🔍 COMPARACIÓN CON BENCHMARKS
+        # =========================================================
+        st.subheader(f"🔍 {selected_bank} vs. Benchmarks del Sistema")
+        
+        benchmark_type = st.selectbox(
+            "Tipo de Benchmark:",
+            ["system_average", "top_quartile", "median"],
+            format_func=lambda x: {
+                "system_average": "Promedio del Sistema",
+                "top_quartile": "Top 25%",
+                "median": "Mediana del Sistema"
+            }[x]
+        )
+        
+        benchmark_data = load_benchmark_analysis(selected_bank, benchmark_type)
+        
+        if benchmark_data and 'comparisons' in benchmark_data:
+            comparisons = benchmark_data['comparisons']
+            
+            # Crear dataframe para visualización
+            bench_list = []
+            for indicator, values in comparisons.items():
+                bench_list.append({
+                    'Indicador': indicator,
+                    'Banco': values['valor_banco'],
+                    'Benchmark': values['valor_benchmark'],
+                    'Diferencia (%)': values['desviacion_relativa_pct'],
+                    'Posición': values['posicion']
+                })
+            
+            if bench_list:
+                bench_df = pd.DataFrame(bench_list)
                 
-                for indicator, data in comparisons.items():
-                    with st.expander(f"📊 {indicator}"):
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.metric("Valor Banco", f"{data['valor_banco']:.2f}")
-                        
-                        with col2:
-                            st.metric("Valor Benchmark", f"{data['valor_benchmark']:.2f}")
-                        
-                        with col3:
-                            desv = data['desviacion_relativa_pct']
-                            if desv > 10:
-                                st.metric("Desviación", f"{desv:.1f}%", delta_color="normal")
-                            elif desv < -10:
-                                st.metric("Desviación", f"{desv:.1f}%", delta_color="inverse")
-                            else:
-                                st.metric("Desviación", f"{desv:.1f}%", delta_color="off")
-                        
-                        st.caption(f"**Posición:** {data['posicion']}")
+                col_chart, col_table = st.columns([2, 1])
                 
-            except Exception as e:
-                st.error(f"❌ Error al obtener benchmark: {e}")
+                with col_chart:
+                    # Gráfico de comparación
+                    fig_bench = go.Figure()
+                    
+                    fig_bench.add_trace(go.Bar(
+                        name=selected_bank,
+                        x=[ind[:20] + "..." for ind in bench_df['Indicador']],
+                        y=bench_df['Diferencia (%)'],
+                        marker_color=['green' if x > 0 else 'red' for x in bench_df['Diferencia (%)']]
+                    ))
+                    
+                    fig_bench.update_layout(
+                        title=f"Diferencia vs {benchmark_type.replace('_', ' ').title()} (%)",
+                        xaxis_title="Indicadores",
+                        yaxis_title="Diferencia (%)",
+                        showlegend=False
+                    )
+                    
+                    st.plotly_chart(fig_bench, use_container_width=True)
+                
+                with col_table:
+                    st.markdown("**📊 Análisis de Posición**")
+                    
+                    # Analizar fortalezas y debilidades
+                    fortalezas = bench_df[bench_df['Diferencia (%)'] > 5]
+                    debilidades = bench_df[bench_df['Diferencia (%)'] < -5]
+                    
+                    if not fortalezas.empty:
+                        st.success(f"**🟢 Fortalezas ({len(fortalezas)})**")
+                        for _, row in fortalezas.head(3).iterrows():
+                            st.write(f"• {row['Indicador'][:25]}...")
+                    
+                    if not debilidades.empty:
+                        st.warning(f"**🔴 Áreas de Mejora ({len(debilidades)})**")
+                        for _, row in debilidades.head(3).iterrows():
+                            st.write(f"• {row['Indicador'][:25]}...")
+                    
+                    if fortalezas.empty and debilidades.empty:
+                        st.info("📊 **Rendimiento equilibrado** con el benchmark")
+                
+                # Tabla detallada
+                st.dataframe(
+                    bench_df.style.format({
+                        'Banco': '{:.2f}',
+                        'Benchmark': '{:.2f}',
+                        'Diferencia (%)': '{:.1f}%'
+                    }).background_gradient(subset=['Diferencia (%)'], cmap='RdYlGn'),
+                    use_container_width=True
+                )
+        else:
+            st.info("No hay datos de benchmark disponibles para este banco")
 
 # =========================================================
 # 📊 PIE DE PÁGINA
 # =========================================================
+st.markdown("---")
 st.caption("📊 Desarrollado por Grupo 5 — Proyecto Integrador 2025")
 st.caption("💡 Dashboard de Salud Financiera - Sistema Bancario Ecuatoriano")
 st.caption("📅 Datos: Superintendencia de Bancos - Septiembre 2025")
-if api_activa:
-    st.caption("🌐 **Modo API REST Activo** - Consumiendo endpoints avanzados")
+st.caption("🔗 Powered by FastAPI + Streamlit")
