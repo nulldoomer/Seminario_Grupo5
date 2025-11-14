@@ -10,6 +10,13 @@ from data_loader import VisualizationDataLoader
 import streamlit as st
 import pandas as pd
 
+# Intentar importar API client (opcional)
+try:
+    from services.api_client import get_api_client
+    API_AVAILABLE = True
+except ImportError:
+    API_AVAILABLE = False
+
 # =========================================================
 # 🔧 CONFIGURACIÓN INICIAL
 # =========================================================
@@ -18,6 +25,22 @@ st.set_page_config(
     page_icon="💰",
     layout="wide"
 )
+
+# =========================================================
+# 🔗 CONFIGURACIÓN DE API (OPCIONAL)
+# =========================================================
+api_client = None
+api_connected = False
+
+if API_AVAILABLE:
+    try:
+        api_client = get_api_client()
+        # Test rápido de conexión
+        test_response = api_client.get_banks_list("Balance")
+        if test_response and len(test_response) > 0:
+            api_connected = True
+    except:
+        api_connected = False
 
 
 # =========================================================
@@ -29,15 +52,71 @@ def init_data_handler():
     data_loader = VisualizationDataLoader()
     return DataHandler(data_loader)
 
+# =========================================================
+# 🔗 FUNCIÓN HÍBRIDA DE DATOS
+# =========================================================
+@st.cache_data
+def load_hybrid_data():
+    """Carga datos del API si está disponible, sino usa datos locales"""
+    if api_connected and api_client:
+        try:
+            # Intentar cargar datos del API (sin mostrar mensaje)
+            
+            # Obtener bancos desde API
+            bancos_response = api_client.get_banks_list("Balance")
+            
+            if bancos_response and isinstance(bancos_response, dict) and "banks" in bancos_response:
+                bancos_api = bancos_response["banks"]
+                
+                # Convertir datos del API a formato compatible
+                api_data = []
+                
+                # Para cada banco y categoría, obtener datos
+                categorias = ["Balance", "Rendimiento", "Estructura"] 
+                
+                for categoria in categorias:
+                    indicators_response = api_client.get_indicators_list(categoria)
+                    if indicators_response and isinstance(indicators_response, dict):
+                        indicadores = indicators_response.get("indicators", [])
+                        
+                        for banco in bancos_api[:5]:  # Limitar para demo
+                            bank_response = api_client.get_bank_financials(banco, categoria)
+                            if bank_response and isinstance(bank_response, dict) and bank_response.get("data"):
+                                # Los datos vienen como un diccionario {indicador: valor}
+                                bank_data = bank_response["data"]
+                                for indicador_name, valor in bank_data.items():
+                                    api_data.append({
+                                        "NOMBRE DEL INDICADOR": indicador_name,
+                                        "Banks": banco,
+                                        "Valor Indicador": valor
+                                    })
+                
+                if api_data:
+                    df_api = pd.DataFrame(api_data)
+                    return df_api
+                
+        except Exception as e:
+            # Error silencioso, fallback a datos locales
+            pass
+    
+    # Fallback: cargar datos locales (sin mostrar mensaje)
+    dh = init_data_handler()
+    df_local = dh.load_data("Final Dataframe")
+    
+    if df_local is not None:
+        return df_local
+    else:
+        st.error("❌ Error cargando datos")
+        return pd.DataFrame()
 
-# Inicializar DataHandler
+# Cargar datos usando función híbrida
+df = load_hybrid_data()
+
+# Inicializar DataHandler para funciones que lo requieren
 dh = init_data_handler()
 
-# Cargar datos
-df = dh.load_data("Final Dataframe")
-
-if df is None:
-    st.error("❌ Error al cargar los datos")
+if df.empty:
+    st.error("❌ No se pudieron cargar datos ni del API ni localmente")
     st.stop()
 
 # =========================================================
@@ -80,6 +159,24 @@ tab_overview, tab_categoria, tab_especifico = st.tabs([
 # Configurar sidebar común
 with st.sidebar:
     st.header("🔍 Panel de Control")
+    
+    # Estado de la conexión API
+    st.subheader("🔗 Estado del Sistema")
+    if api_connected:
+        st.success("✅ API Conectado")
+        st.caption(f"🌐 {api_client.base_url}")
+        st.caption("📡 Datos en tiempo real")
+        if st.button("🔄 Reconectar"):
+            st.rerun()
+    elif API_AVAILABLE:
+        st.warning("⚠️ API Instalado")
+        st.caption("🔌 Sin conexión activa")
+        if st.button("🔗 Intentar Conectar"):
+            st.rerun()
+    else:
+        st.info("📁 Modo Local")
+        st.caption("🗄️ Usando datos locales")
+    
     st.markdown("---")
     
     # Información adicional general
