@@ -8,7 +8,7 @@ import streamlit as st
 from typing import Optional, Dict, List, Any
 
 class APIClient:
-    def __init__(self, base_url: str = "http://127.0.0.1:8002"):
+    def __init__(self, base_url: str = "http://127.0.0.1:8000"):
         self.base_url = base_url
         self.session = requests.Session()
         self.session.timeout = 10

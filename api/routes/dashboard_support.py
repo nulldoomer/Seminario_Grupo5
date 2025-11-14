@@ -41,7 +41,7 @@ def get_banks_list():
         raise HTTPException(status_code=503, detail="Datos no disponibles")
     
     try:
-        bancos = list(df_original['bank_name'].unique())
+        bancos = list(df_original['banks'].unique())
         return {
             "banks": bancos,
             "total": len(bancos)
