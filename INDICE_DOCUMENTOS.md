@@ -4,6 +4,45 @@
 
 Aquí está toda la documentación necesaria para preparar y ejecutar tu defensa.
 
+**ACTUALIZACIÓN:** Estructura de 3 exponentes × 10 minutos con contexto de Superintendencia de Bancos
+
+---
+
+## 🎬 GUÍA PRINCIPAL - **GUIA_PRESENTACION_3EXPONENTES.md** ⭐
+### Estructura Completa para 3 Exponentes (30 min total)
+
+📌 **ESTA ES TU GUÍA PRINCIPAL PARA LA DEFENSA**
+
+**Contenido:**
+- **Expositor 1 (10 min):** Contexto de Superintendencia + Problema + Objetivos + Arquitectura
+  - Minutos 0-1: Contexto e importancia de la Superintendencia
+  - Minutos 1-3: El problema real (boletines complejos)
+  - Minutos 3-5: Objetivos del proyecto
+  - Minutos 5-8: Arquitectura del sistema
+  - Minutos 8-10: Stack tecnológico y justificación
+
+- **Expositor 2 (10 min):** ETL Pipeline en Detalle + FastAPI
+  - Minutos 0-1: Transición y revisión
+  - Minutos 1-4: ETL (Ingestion → Cleaning → Transformation)
+  - Minutos 4-7: FastAPI - Endpoints REST
+  - Minutos 7-9: Despliegue
+  - Minutos 9-10: Lecciones aprendidas
+
+- **Expositor 3 (10 min):** Dashboard + KPIs + Resultados
+  - Minutos 0-1: Transición
+  - Minutos 1-4: Componentes del Dashboard
+  - Minutos 4-7: Los 18 KPIs explicados
+  - Minutos 7-9: Resultados del análisis
+  - Minutos 9-10: Conclusiones y futuro
+
+**✅ Úsalo para:**
+- **PRINCIPAL:** Tu guía directa de presentación
+- Practicar timing (10 min cada uno)
+- Sincronizar entre los 3 exponentes
+- Tener respuestas preparadas para Q&A
+
+**⏱️ Presentación:** 30 minutos total (10 + 10 + 10)
+
 ---
 
 ## 1️⃣ **ANALISIS_DEFENSA.md** 
@@ -11,37 +50,40 @@ Aquí está toda la documentación necesaria para preparar y ejecutar tu defensa
 
 📌 **Contenido:**
 - Resumen ejecutivo del proyecto
+- Contexto de Superintendencia de Bancos
 - Arquitectura detallada (ETL Pipeline)
 - Componentes principales explicados
 - Stack tecnológico completo
 - Análisis de datos y KPIs
 - Fortalezas del proyecto
-- Áreas de mejora identificadas
+- Áreas de mejora identificadas (con Docker + API completa)
 - Flujo de ejecución completo
 - Conceptos clave aplicados
 - Recomendaciones para defensa
 
 **✅ Úsalo para:**
 - Entender profundamente el proyecto
-- Preparar respuestas técnicas
-- Documentar decisiones
-- Referencia detallada durante Q&A
+- Preparar respuestas técnicas detalladas
+- Documentar decisiones arquitectónicas
+- Referencia técnica durante Q&A
 
-**⏱️ Lectura:** 30-40 minutos
+**⏱️ Lectura:** 40-50 minutos
 
 ---
 
 ## 2️⃣ **RESUMEN_EJECUTIVO.md**
-### Presentación en Diapositivas (3,500+ palabras)
+### Presentación Ejecutiva (3,500+ palabras)
 
 📌 **Contenido:**
-- Portada y estructura
+- Contexto de Superintendencia de Bancos
+- Portada y estructura de presentación
 - Problema y oportunidad
 - Solución propuesta
 - Arquitectura técnica
-- 18 KPIs organizados
-- Stack tecnológico justificado
+- 18 KPIs organizados por categoría
+- Stack tecnológico justificado (con Docker)
 - Funcionalidades del dashboard
+- Demo en vivo: 2 opciones (Local vs Docker)
 - Fortalezas resumidas
 - Roadmap de mejoras
 - Números del proyecto
@@ -57,52 +99,117 @@ Aquí está toda la documentación necesaria para preparar y ejecutar tu defensa
 
 ---
 
-## 3️⃣ **GUIA_PRESENTACION.md**
-### Script Completo de Presentación (5,000+ palabras)
+## 3️⃣ **SINCRONIZACION_3EXPONENTES.md**
+### Guía de Sincronización Detallada (4,000+ palabras)
 
 📌 **Contenido:**
-- Estructura de 20-25 minutos
-- Guion por sección (9 partes)
-- Timing recomendado
-- Qué mostrar en cada momento
-- Demostración en vivo estructurada
-- Párrafos de transición preparados
-- Tips de presentación
-- Puntos clave a memorizar
-- Estrategia de preguntas
-- Visual aids sugeridos
+- Calendario de preparación (3 semanas)
+- **Timing exacto por minuto** para cada exponente
+- Puntos de transición precisos (cuándo habla quién)
+- Roles y responsabilidades de cada exponente
+- Respuestas a 5 preguntas Q&A por exponente
+- Checklist de sincronización
+- Consejos de voz y presentación
+- Manejo de nervios
+- Emergencias: qué hacer si falla algo
+- Demo en vivo: setup y fallback
 
 **✅ Úsalo para:**
-- Practicar presentación
-- Tener guion listo
-- Mantener timing
-- No olvidar puntos importantes
+- **CRÍTICO:** Practicar juntos 2+ veces
+- Sincronizar transiciones perfectamente
+- Saber exactamente qué tiempo tiene cada uno
+- Responder preguntas de tu sección
+- Coordinar demo en vivo si falla
 
-**⏱️ Lectura:** 20 minutos (+ práctica)
+**⏱️ Lectura:** 20-30 minutos (+ práctica grupal)
 
 ---
 
-## 4️⃣ **PREGUNTAS_Y_RESPUESTAS.md**
-### Q&A Anticipadas (6,000+ palabras)
+## 4️⃣ **RESUMEN_RAPIDO_DEFENSA.md**
+### Quick Reference (2,500 palabras)
 
 📌 **Contenido:**
-- 45 preguntas + respuestas detalladas
-- Organizadas por categoría:
-  - Arquitectura (5 preguntas)
-  - Técnicas (10 preguntas)
-  - Datos (5 preguntas)
-  - Dashboard (5 preguntas)
-  - Productización (5 preguntas)
-  - Decisiones específicas (5 preguntas)
-  - Preguntas rápidas (10 preguntas)
-  - Preguntas trampa (5 preguntas)
-- Respuesta para preguntas inesperadas
+- Contexto Superintendencia (1 min de lectura)
+- Problema en 30 segundos
+- Solución visual
+- 18 KPIs resumidos
+- Stack tecnológico en tabla
+- Números del proyecto
+- División de exponentes
+- Fortalezas y futuro
+- Respuestas rápidas para Q&A
+- Mensaje final
+
+**✅ Úsalo para:**
+- Último repaso antes de defensa (15 minutos)
+- Referencia rápida el día de la presentación
+- Recordar números clave
+- Respuestas puntuales
+
+**⏱️ Lectura:** 10-15 minutos
+
+---
+
+## 5️⃣ **QA_ESPERADAS_DEFENSA.md**
+### 15 Preguntas + Respuestas Completas (5,000+ palabras)
+
+📌 **Contenido:**
+- **8 Categorías de preguntas:**
+  1. Problema y justificación (2 Q)
+  2. Arquitectura y diseño (3 Q)
+  3. Profundidad técnica (4 Q)
+  4. Decisiones tecnológicas (3 Q)
+  5. Datos y KPIs (2 Q)
+  6. Resultados y futuro (2 Q)
+  7. Crítica constructiva (2 Q)
+  8. Defensa del equipo (1 Q)
+
+- Respuestas adaptadas por exponente
+- Metaestrategia para Q&A
+- Distribución de preguntas
+- Timing recomendado
+- Qué buscan evaluar los jurados
 
 **✅ Úsalo para:**
 - Preparar respuestas defensivas
-- Practicar con compañeros
-- Anticipar críticas
-- No quedarte sin respuesta
+- Practicar explicaciones técnicas
+- Saber quién responde qué
+- Defender decisiones del proyecto
+- Mostrar pensamiento crítico
+
+**⏱️ Lectura:** 30-40 minutos
+
+---
+
+## 6️⃣ **GUIA_PRESENTACION.md** (Antigua)
+### Script Original de Presentación (5,000+ palabras)
+
+📌 **Contenido:**
+- Estructura general del proyecto
+- Slides recomendadas
+- Timing aproximado
+- Puntos clave por sección
+
+**✅ Úsalo para:**
+- Referencia histórica
+- Elementos que pueda usar Expositor 1
+
+**⏱️ Lectura:** 15-20 minutos
+
+---
+
+## 7️⃣ **PREGUNTAS_Y_RESPUESTAS.md** (Antigua)
+### Q&A Generales del Proyecto (6,000+ palabras)
+
+📌 **Contenido:**
+- 45 preguntas + respuestas
+- Preguntas por categoría
+- Respuestas detalladas
+
+**✅ Úsalo para:**
+- Profundizar en tópicos específicos
+- Respuestas alternativas a mismas preguntas
+- Contexto histórico
 
 **⏱️ Lectura:** 30-40 minutos
 

@@ -291,15 +291,112 @@ Una vez levantado:
 
 ---
 
+## 🐳 OPCIÓN 2: DOCKER (Recomendado para producción)
+
+### Requisitos Previos
+- **Docker Desktop** instalado y corriendo
+- Dockerfile presente en la raíz del proyecto
+
+### Paso 1: Construir la imagen Docker
+```bash
+docker build -t seminario-grupo5 .
+```
+
+**Qué hace:**
+- Lee el Dockerfile
+- Instala Python 3.10 slim
+- Instala uv
+- Descarga todas las dependencias
+- Ejecuta el pipeline ETL automáticamente
+- Prepara FastAPI para ejecutar
+
+**Output esperado:**
+```
+[+] Building 45.2s (12/12) FINISHED
+ => => naming to docker.io/library/seminario-grupo5:latest
+```
+
+### Paso 2: Ejecutar el contenedor
+```bash
+docker run -p 8000:8000 seminario-grupo5
+```
+
+**Flags explicados:**
+- `-p 8000:8000`: Mapea puerto 8000 del contenedor al puerto 8000 de tu máquina
+- Resultado: FastAPI disponible en `http://localhost:8000`
+
+### Verificar que funciona
+```bash
+# En otra terminal
+curl http://localhost:8000/docs
+```
+
+O abre en navegador: `http://localhost:8000/docs` (Swagger UI)
+
+### Detener el contenedor
+```bash
+Ctrl + C
+```
+
+---
+
+## ☁️ OPCIÓN 3: DESPLEGAR EN LA NUBE
+
+### Railway (Recomendado - Gratis primeros 5 dólares)
+1. Crea cuenta en https://railway.app
+2. Conecta tu GitHub
+3. Crea nuevo proyecto
+4. Selecciona repositorio
+5. Deploy automático en `https://tu-proyecto.up.railway.app`
+
+**Ventajas:**
+- Gratuito para experimentar
+- Deploy automático de GitHub
+- Base datos PostgreSQL incluida (futuro)
+- Muy simple
+
+### Render.com
+1. Crea cuenta en https://render.com
+2. Nuevo "Web Service"
+3. Conecta GitHub
+4. Build: `docker build -t seminario .`
+5. Start: `docker run -p 8000:8000 seminario`
+
+**Ventajas:**
+- Tier gratuito limitado
+- Excelente documentación
+- Bueno para demos
+
+### Digital Ocean
+1. Crea cuenta en https://digitalocean.com
+2. App Platform o Droplet
+3. Sube Docker image
+4. Dominio personalizado
+
+**Ventajas:**
+- $5/mes mínimo muy confiable
+- Control total
+- Escalable
+
+---
+
 ## ✅ CHECKLIST
 
+### Local sin Docker
 - [ ] Python 3.10+ instalado
 - [ ] uv instalado y funcionando
 - [ ] `uv sync` ejecutado exitosamente
 - [ ] `uv run scripts/pipeline/main.py` sin errores
-- [ ] `streamlit run scripts/visualizations/main.py` abre en navegador
+- [ ] `uv run streamlit run scripts/visualizations/main.py` abre en navegador
 - [ ] Dashboard muestra datos
 - [ ] Filtros funcionan correctamente
+
+### Con Docker
+- [ ] Docker Desktop instalado y corriendo
+- [ ] `docker build -t seminario-grupo5 .` sin errores
+- [ ] `docker run -p 8000:8000 seminario-grupo5` ejecutándose
+- [ ] `http://localhost:8000/docs` accesible
+- [ ] FastAPI respondiendo correctamente
 
 ---
 

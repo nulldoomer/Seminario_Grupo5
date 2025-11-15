@@ -16,12 +16,29 @@
 ### ¿Qué es el Proyecto?
 
 **Sistema de Business Intelligence** que automatiza:
-1. Ingestión de datos de Excel
-2. Limpieza y transformación
-3. Visualización interactiva
-4. Comparación y ranking de bancos ecuatorianos
+1. Ingestión de boletines de la Superintendencia de Bancos
+2. Limpieza y transformación de datos complejos
+3. Visualización interactiva profesional
+4. Comparación y ranking automático de bancos ecuatorianos
 
-**Resultado:** Dashboard que permite análisis rápido de KPIs financieros
+**Resultado:** Dashboard + API REST que permite análisis en minutos (antes: horas)
+
+---
+
+## Contexto: Superintendencia de Bancos
+
+**La Superintendencia de Bancos de Ecuador** publica **mensualmente** boletines estadísticos con:
+- Balance General de cada banco (activos, pasivos, patrimonio)
+- Composición de carteras (créditos, depósitos, inversiones)
+- Indicadores de rendimiento (ROA, ROE, morosidad, liquidez)
+- Datos de ~15-24 bancos privados ecuatorianos
+
+**Problema:** Estos boletines vienen en **archivos Excel complejos**:
+- ❌ Múltiples hojas con formatos no estándar
+- ❌ Datos transversales (bancos en columnas, difícil de analizar)
+- ❌ Análisis manual requiere 2-4 horas por período
+- ❌ Propenso a errores humanos
+- ❌ No reutilizable para nuevos períodos
 
 ---
 
@@ -148,13 +165,24 @@ Streamlit 1.50.0+ (framework dashboard)
 ### API (Acceso Programático)
 ```
 FastAPI (framework REST)
-└── (Estructura lista para completar)
+├── Pydantic (validación de datos)
+├── CORS middleware
+└── Swagger/ReDoc autodocs
+```
+
+### Infraestructura y Despliegue
+```
+Docker (containerización)
+├── Imagen base: python:3.10-slim
+├── Construcción automática del pipeline
+├── FastAPI listo en puerto 8000
+└── Deployment en Cloud (Railway/Render/Digital Ocean)
 ```
 
 ### Gestión de Proyectos
 ```
 uv (package manager)
-└── Entorno virtual automático
+└── Entorno virtual automático + reproducibilidad
 ```
 
 ---
@@ -251,7 +279,7 @@ uv (package manager)
 
 ## Demostración en Vivo
 
-### Pasos para Mostrar
+### Pasos para Mostrar (Opción 1: Local)
 
 1. **Ejecutar Pipeline ETL**
    ```bash
@@ -261,7 +289,7 @@ uv (package manager)
 
 2. **Lanzar Dashboard**
    ```bash
-   streamlit run scripts/visualizations/main.py
+   uv run streamlit run scripts/visualizations/main.py
    ```
    ➜ Abre http://localhost:8501
 
@@ -271,11 +299,31 @@ uv (package manager)
    - Comparar indicador → Genera ranking
    - Descargar datos → Exporta a CSV
 
-4. **Mostrar Capacidades**
+4. **Mostrar API (Bonus)**
+   ```bash
+   uv run uvicorn api.main:app --reload
+   ```
+   ➜ Accede a http://localhost:8000/docs para Swagger UI
+
+### Pasos para Mostrar (Opción 2: Docker - Producción)
+
+1. **Construir imagen Docker**
+   ```bash
+   docker build -t seminario-grupo5 .
+   ```
+
+2. **Ejecutar contenedor**
+   ```bash
+   docker run -p 8000:8000 seminario-grupo5
+   ```
+   ➜ FastAPI en http://localhost:8000/docs
+
+3. **Mostrar Capacidades**
    - Top 3 / Bottom 3 bancos
    - Tabla comparativa con gradientes
    - Estadísticas detalladas
    - Análisis multi-banco
+   - API endpoints con validación automática
 
 ---
 
