@@ -192,6 +192,6 @@ class BankApiClient:
 
 
 @st.cache_resource
-def get_api_client(base_url: str = "http://localhost:8000") -> BankApiClient:
+def get_api_client(base_url: str = "https://bank-api-service-216433300622.us-central1.run.app") -> BankApiClient:
 
     return BankApiClient(base_url)

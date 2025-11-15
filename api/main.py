@@ -37,7 +37,7 @@ if __name__ == "__main__":
     import uvicorn
     
     print("Inciando API")
-    print("Documentación: http://localhost:8000/docs")
+    print("Documentación: https://bank-api-service-216433300622.us-central1.run.app/docs")
     
     uvicorn.run(
         "main:app",
