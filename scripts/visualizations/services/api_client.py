@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 
 class BankApiClient:
 
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "https://bank-api-service-216433300622.us-central1.run.app"):
 
         self.base_url = base_url
         self.timeout = 30  # segundos
