@@ -25,7 +25,10 @@ Uniandes - 2025
 - 📊 Balance General (activos, pasivos, patrimonio)
 - 💰 Composición de Carteras (créditos, depósitos)
 - 📈 Indicadores de Rendimiento (ROA, ROE, morosidad)
-- 🏦 Datos de ~15-24 bancos privados ecuatorianos
+➡️ ROA: mide qué tan eficiente es una empresa para generar utilidades usando sus activos.
+➡️ ROE: mide la rentabilidad que obtiene la empresa sobre el capital de los accionistas.
+➡️ Morosidad: porcentaje de créditos que no están siendo pagados a tiempo.
+- 🏦 Datos 24 bancos ecuatorianos
 
 **¿Por qué es importante?**
 - ✓ Transparencia financiera oficial y confiable
