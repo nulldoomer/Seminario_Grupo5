@@ -198,15 +198,7 @@ class DataHandler:
             return sorted(df[column].unique().tolist())
 
     def get_summary(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """
-        Obtiene resumen del DataFrame
-        
-        Args:
-            df: DataFrame a resumir
-        
-        Returns:
-            Diccionario con información resumida
-        """
+
         summary = {
             "shape": df.shape,
             "columns": df.columns.tolist(),
