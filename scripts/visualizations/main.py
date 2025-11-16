@@ -6,7 +6,7 @@ from components.ui_components import UIComponents
 from components.advanced_metrics import AdvancedMetrics
 from components.analysis_engine import TrendAnalysis, AlertRenderer
 
-from data_loader import VisualizationDataLoader 
+from services.api_client import  get_api_client
 import streamlit as st
 import pandas as pd
 
@@ -44,7 +44,7 @@ if API_AVAILABLE:
 
 
 # =========================================================
-# 📁 INICIALIZACIÓN Y CARGA DE DATOS
+# 🔗 CONEXIÓN CON API
 # =========================================================
 @st.cache_resource
 def init_data_handler():
@@ -625,11 +625,6 @@ with tab_categoria:
         help="Análisis detallado por tipo de indicadores"
     )
     
-    # Obtener configuración de la categoría
-    is_percentage = IndicatorConfig.is_category_percentage(categoria)
-    unit = IndicatorConfig.get_category_unit(categoria)
-    indicator_names = IndicatorConfig.get_indicator_names_by_category(categoria)
-    
     # Mostrar info según categoría
     if categoria == "Balance":
         st.info("💼 **Balance:** Activos y recursos del banco")
@@ -644,14 +639,12 @@ with tab_categoria:
     elif categoria == "Crecimiento":
         st.info("📈 **Crecimiento:** Variaciones temporales")
     
-    # Filtrar datos según categoría
-    df_filtrado = dh.filter_by_category(
-        indicator_names=indicator_names,
-        convert_percentage=is_percentage
-    )
+    # Cargar indicadores de la categoría
+    indicadores = load_indicators_list(categoria)
+    bancos = load_banks_list(categoria)
     
-    if df_filtrado.empty:
-        st.error(f"⚠️ No hay datos para la categoría {categoria}")
+    if not indicadores:
+        st.error("No hay indicadores disponibles para esta categoría")
         st.stop()
     
     bancos = dh.get_unique_values(df_filtrado, "banks")
@@ -1430,6 +1423,7 @@ with tab_especifico:
 # =========================================================
 # 📊 PIE DE PÁGINA
 # =========================================================
+st.markdown("---")
 st.caption("📊 Desarrollado por Grupo 5 — Proyecto Integrador 2025")
 st.caption("💡 Dashboard de Salud Financiera - Sistema Bancario Ecuatoriano")
 st.caption("📅 Datos: Superintendencia de Bancos - Septiembre 2025")
