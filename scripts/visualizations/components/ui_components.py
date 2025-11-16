@@ -47,7 +47,7 @@ class UIComponents:
         is_percentage: bool = False
     ):
 
-        medals = ["🥇", "🥈", "🥉"]
+        medals = ["1st", "2nd", "3rd"]
 
         for idx in range(min(3, len(df))):
 
@@ -70,7 +70,7 @@ class UIComponents:
         is_percentage: bool = False
     ):
 
-        st.markdown("### 📉 Bottom 3")
+        st.markdown("### Bottom 3")
 
         start_idx = max(0, len(df) - n)
 

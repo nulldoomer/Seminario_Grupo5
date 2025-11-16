@@ -5,8 +5,9 @@ from components.charts_builder import ChartBuilder
 from components.ui_components import UIComponents
 from components.advanced_metrics import AdvancedMetrics
 from components.analysis_engine import TrendAnalysis, AlertRenderer
+from data_loader import VisualizationDataLoader
 
-from services.api_client import  get_api_client
+from services.api_client import get_api_client
 import streamlit as st
 import pandas as pd
 
@@ -18,16 +19,16 @@ except ImportError:
     API_AVAILABLE = False
 
 # =========================================================
-# 🔧 CONFIGURACIÓN INICIAL
+# CONFIGURACIÓN INICIAL
 # =========================================================
 st.set_page_config(
     page_title="Dashboard de Salud Financiera",
-    page_icon="💰",
+    page_icon="",
     layout="wide"
 )
 
 # =========================================================
-# 🔗 CONFIGURACIÓN DE API (OPCIONAL)
+# CONFIGURACIÓN DE API (OPCIONAL)
 # =========================================================
 api_client = None
 api_connected = False
@@ -35,16 +36,23 @@ api_connected = False
 if API_AVAILABLE:
     try:
         api_client = get_api_client()
-        # Test rápido de conexión
-        test_response = api_client.get_banks_list("Balance")
-        if test_response and len(test_response) > 0:
+        # Test de conectividad básica (más tolerante)
+        test_response = api_client.test_connection()
+        if test_response and test_response.get("status") == "success":
             api_connected = True
-    except:
+        else:
+            # Fallback: verificar si el servidor responde
+            import requests
+            response = requests.get(api_client.base_url, timeout=5)
+            if response.status_code == 200:
+                api_connected = True
+    except Exception as e:
+        print(f"Error conectando al API: {e}")
         api_connected = False
 
 
 # =========================================================
-# 🔗 CONEXIÓN CON API
+# CONEXIÓN CON API
 # =========================================================
 @st.cache_resource
 def init_data_handler():
@@ -53,7 +61,7 @@ def init_data_handler():
     return DataHandler(data_loader)
 
 # =========================================================
-# 🔗 FUNCIÓN HÍBRIDA DE DATOS
+# FUNCIÓN HÍBRIDA DE DATOS
 # =========================================================
 @st.cache_data
 def load_hybrid_data():
@@ -106,7 +114,7 @@ def load_hybrid_data():
     if df_local is not None:
         return df_local
     else:
-        st.error("❌ Error cargando datos")
+        st.error("Error cargando datos")
         return pd.DataFrame()
 
 # Cargar datos usando función híbrida
@@ -116,11 +124,11 @@ df = load_hybrid_data()
 dh = init_data_handler()
 
 if df.empty:
-    st.error("❌ No se pudieron cargar datos ni del API ni localmente")
+    st.error("No se pudieron cargar datos ni del API ni localmente")
     st.stop()
 
 # =========================================================
-# 🔧 ENRIQUECIMIENTO DE DATOS CON MÉTRICAS AVANZADAS
+# ENRIQUECIMIENTO DE DATOS CON MÉTRICAS AVANZADAS
 # =========================================================
 @st.cache_data
 def enrich_data_with_advanced_metrics(df):
@@ -139,43 +147,54 @@ df = enrich_data_with_advanced_metrics(df)
 
 
 # =========================================================
-# 🎨 ENCABEZADO
+# ENCABEZADO
 # =========================================================
-st.title("💰 Dashboard de Salud Financiera Bancaria")
+st.title("Dashboard de Salud Financiera Bancaria")
 st.markdown("""
 **Análisis integral del Sistema Bancario Ecuatoriano**  
 Dashboard interactivo para evaluar indicadores de Balance, Rendimiento y Estructura Financiera.
 """)
 
 # =========================================================
-# 📑 PESTAÑAS PRINCIPALES
+# PESTAÑAS PRINCIPALES
 # =========================================================
 tab_overview, tab_categoria, tab_especifico = st.tabs([
-    "📊 Overview General", 
-    "🎯 Análisis por Categoría", 
-    "🏦 Análisis Específico por Banco"
+    "Overview General", 
+    "Análisis por Categoría", 
+    "Análisis Específico por Banco"
 ])
 
 # Configurar sidebar común
 with st.sidebar:
-    st.header("🔍 Panel de Control")
+    st.header("Panel de Control")
     
     # Estado de la conexión API
-    st.subheader("🔗 Estado del Sistema")
+    st.subheader("Estado del Sistema")
     if api_connected:
-        st.success("✅ API Conectado")
-        st.caption(f"🌐 {api_client.base_url}")
-        st.caption("📡 Datos en tiempo real")
-        if st.button("🔄 Reconectar"):
+        st.success("API Conectado")
+        st.caption(f"URL: {api_client.base_url}")
+        
+        # Verificar disponibilidad de endpoints específicos
+        try:
+            test_banks = api_client.get_banks_list("Balance")
+            if test_banks:
+                st.caption("Endpoints funcionando")
+            else:
+                st.caption("Algunos endpoints no disponibles")
+        except:
+            st.caption("Endpoints limitados")
+            
+        if st.button("Reconectar"):
             st.rerun()
     elif API_AVAILABLE:
-        st.warning("⚠️ API Instalado")
-        st.caption("🔌 Sin conexión activa")
-        if st.button("🔗 Intentar Conectar"):
+        st.warning("API Parcialmente Disponible")
+        st.caption("Servidor responde pero endpoints limitados")
+        st.caption(f"URL: {api_client.base_url if api_client else 'N/A'}")
+        if st.button("Intentar Conectar"):
             st.rerun()
     else:
-        st.info("📁 Modo Local")
-        st.caption("🗄️ Usando datos locales")
+        st.info("Modo Local")
+        st.caption("Usando datos locales")
     
     st.markdown("---")
     
@@ -183,15 +202,15 @@ with st.sidebar:
     total_bancos_sistema = df["banks"].nunique()
     total_indicadores_sistema = df["nombre_del_indicador"].nunique()
     
-    st.caption(f"🏦 **Total Bancos:** {total_bancos_sistema}")
+    st.caption(f"Total Bancos: {total_bancos_sistema}")
     st.caption(f"� **Total Indicadores:** {total_indicadores_sistema}")
-    st.caption(f"📅 **Periodo:** Septiembre 2025")
+    st.caption(f"**Periodo:** Septiembre 2025")
 
 # =========================================================
-# 📊 TAB 1: OVERVIEW GENERAL - TODOS LOS DATOS
+#  TAB 1: OVERVIEW GENERAL - TODOS LOS DATOS
 # =========================================================
 with tab_overview:
-    st.header("📊 Overview General del Sistema Bancario")
+    st.header("Overview General del Sistema Bancario")
     st.markdown("**Vista panorámica de todos los indicadores y bancos del sistema**")
     
     # Inicializar calculadora de métricas
@@ -201,21 +220,21 @@ with tab_overview:
     # =========================================================
     # 📈 ESTADÍSTICAS GENERALES DEL SISTEMA COMPLETO
     # =========================================================
-    st.subheader("📈 Estadísticas Generales del Sistema")
+    st.subheader("Estadísticas Generales del Sistema")
     
     # Métricas del sistema completo
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.metric(
-            "🏦 Total Bancos",
+            "Total Bancos",
             f"{total_bancos_sistema}",
             "en el sistema"
         )
     
     with col2:
         st.metric(
-            "📊 Total Indicadores",
+            "Total Indicadores",
             f"{total_indicadores_sistema}",
             "métricas disponibles"
         )
@@ -223,7 +242,7 @@ with tab_overview:
     with col3:
         total_observaciones = len(df)
         st.metric(
-            "📋 Total Observaciones",
+            "Total Observaciones",
             f"{total_observaciones:,}",
             "registros de datos"
         )
@@ -232,7 +251,7 @@ with tab_overview:
         # Calcular completitud de datos
         completitud = ((df['valor_indicador'].notna().sum() / len(df)) * 100)
         st.metric(
-            "✅ Completitud de Datos",
+            "Completitud de Datos",
             f"{completitud:.1f}%",
             "datos disponibles"
         )
@@ -240,14 +259,14 @@ with tab_overview:
     st.markdown("---")
     
     # =========================================================
-    # 📊 ESTADÍSTICAS CLAVE DEL SISTEMA BANCARIO
+    #  ESTADÍSTICAS CLAVE DEL SISTEMA BANCARIO
     # =========================================================
-    st.subheader("📊 Estadísticas Clave del Sistema")
+    st.subheader("Estadísticas Clave del Sistema")
     
     col_stats1, col_stats2 = st.columns(2)
     
     with col_stats1:
-        st.markdown("**💰 Indicadores Financieros Principales**")
+        st.markdown("**Indicadores Financieros Principales**")
         
         # Total de activos del sistema
         activos_data = df[df['nombre_del_indicador'] == 'TOTAL ACTIVO']
@@ -259,16 +278,16 @@ with tab_overview:
         roe_sistema = df[df['nombre_del_indicador'] == 'RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO']
         if not roe_sistema.empty:
             roe_promedio = roe_sistema['valor_indicador'].mean()
-            st.metric("📈 ROE Promedio Sistema", f"{roe_promedio:.2f}%")
+            st.metric("ROE Promedio Sistema", f"{roe_promedio:.2f}%")
         
         # Promedio ROA del sistema
         roa_sistema = df[df['nombre_del_indicador'] == 'RESULTADOS DEL EJERCICIO / ACTIVO PROMEDIO']
         if not roa_sistema.empty:
             roa_promedio = roa_sistema['valor_indicador'].mean()
-            st.metric("📊 ROA Promedio Sistema", f"{roa_promedio:.2f}%")
+            st.metric("ROA Promedio Sistema", f"{roa_promedio:.2f}%")
     
     with col_stats2:
-        st.markdown("**🏦 Concentración y Distribución**")
+        st.markdown("**Concentración y Distribución**")
         
         # Concentración de los 3 bancos más grandes
         if not activos_data.empty:
@@ -279,62 +298,124 @@ with tab_overview:
         # Banco mediano por activos
         if not activos_data.empty:
             mediana_activos = activos_data['valor_indicador'].median()
-            st.metric("📊 Banco Mediano (Activos)", f"${mediana_activos:,.0f}")
+            st.metric("Banco Mediano (Activos)", f"${mediana_activos:,.0f}")
         
         # Coeficiente de variación en ROE
         if not roe_sistema.empty:
             cv_roe = (roe_sistema['valor_indicador'].std() / roe_sistema['valor_indicador'].mean() * 100)
-            st.metric("📈 Variabilidad ROE", f"{cv_roe:.1f}%")
+            st.metric("Variabilidad ROE", f"{cv_roe:.1f}%")
     
     st.markdown("---")
     
     # =========================================================
-    # 🎯 ANÁLISIS DE CONCENTRACIÓN DETALLADO
+    # ANÁLISIS DE CONCENTRACIÓN DETALLADO
     # =========================================================
-    st.subheader("🎯 Análisis de Concentración del Mercado")
+    st.subheader("Análisis de Concentración del Mercado")
     
     concentration_data = TrendAnalysis.calculate_concentration_risk(df)
     
-    if concentration_data:
+    if concentration_data and 'TOTAL ACTIVO' in concentration_data:
+        activo_data = concentration_data['TOTAL ACTIVO']
         col_conc1, col_conc2 = st.columns([2, 1])
         
         with col_conc1:
             # Mostrar HHI y nivel de concentración
-            hhi = concentration_data.get('hhi', 0)
-            concentration_level = concentration_data.get('concentration_level', 'Desconocido')
+            hhi = activo_data.get('HHI', 0)
+            concentration_level = activo_data.get('interpretacion_HHI', 'Desconocido')
             
             st.metric(
-                "📊 Índice HHI",
+                "Índice HHI",
                 f"{hhi:.0f}",
                 f"Concentración: {concentration_level}"
             )
             
             # Interpretación del HHI
             if hhi < 1500:
-                st.success("✅ Mercado no concentrado (HHI < 1500)")
+                st.success("Mercado no concentrado (HHI < 1500)")
             elif hhi < 2500:
-                st.warning("⚠️ Mercado moderadamente concentrado (1500 ≤ HHI < 2500)")
+                st.warning("Mercado moderadamente concentrado (1500 ≤ HHI < 2500)")
             else:
-                st.error("🚨 Mercado altamente concentrado (HHI ≥ 2500)")
+                st.error("Mercado altamente concentrado (HHI ≥ 2500)")
         
         with col_conc2:
-            if 'top_banks' in concentration_data:
-                st.markdown("**🏆 Top 5 Participación**")
-                for i, bank_info in enumerate(concentration_data['top_banks'][:5]):
-                    bank_name = bank_info['bank']
-                    market_share = bank_info['market_share']
+            # Mostrar CR3 y CR5
+            cr3 = activo_data.get('CR3', 0)
+            cr5 = activo_data.get('CR5', 0)
+            
+            st.metric("Top 3 Concentración", f"{cr3:.1f}%")
+            st.metric("Top 5 Concentración", f"{cr5:.1f}%")
+    else:
+        # Fallback: calcular concentración básica manualmente
+        st.info("Calculando concentración con datos disponibles...")
+        
+        # Buscar datos de activos
+        activos_data = df[df['nombre_del_indicador'].str.contains('ACTIVO', case=False, na=False)]
+        
+        if not activos_data.empty:
+            # Agrupar por banco y sumar activos
+            bank_assets = activos_data.groupby('banks')['valor_indicador'].sum().sort_values(ascending=False)
+            total_assets = bank_assets.sum()
+            
+            if total_assets > 0:
+                # Calcular participaciones de mercado
+                market_shares = (bank_assets / total_assets * 100)
+                
+                # Calcular HHI
+                hhi = (market_shares ** 2).sum()
+                
+                # Concentración Top 3 y Top 5
+                cr3 = market_shares.head(3).sum()
+                cr5 = market_shares.head(5).sum()
+                
+                col_conc1, col_conc2 = st.columns([2, 1])
+                
+                with col_conc1:
+                    if hhi < 1500:
+                        concentration_level = "Competitivo"
+                        st.success("Mercado no concentrado (HHI < 1500)")
+                    elif hhi < 2500:
+                        concentration_level = "Moderadamente Concentrado"
+                        st.warning("Mercado moderadamente concentrado (1500 ≤ HHI < 2500)")
+                    else:
+                        concentration_level = "Altamente Concentrado"
+                        st.error("Mercado altamente concentrado (HHI ≥ 2500)")
+                    
                     st.metric(
-                        f"{i+1}. {bank_name[:12]}...",
-                        f"{market_share:.1f}%",
-                        "participación"
+                        "Índice HHI",
+                        f"{hhi:.0f}",
+                        f"Concentración: {concentration_level}"
                     )
+                
+                with col_conc2:
+                    if cr5 > 0:
+                        st.metric("Top 3 Concentración", f"{cr3:.1f}%")
+                        st.metric("Top 5 Concentración", f"{cr5:.1f}%")
+                    else:
+                        st.metric("Top 3 Concentración", f"{cr3:.1f}%")
+                        st.metric("Top 5 Concentración", "Calculando...")
+                    
+                    # Mostrar top 5 bancos por participación
+                    if len(market_shares) >= 5:
+                        st.markdown("**Top 5 Participación**")
+                        for i, (bank, share) in enumerate(market_shares.head(5).items()):
+                            bank_short = bank[:15] + "..." if len(bank) > 15 else bank
+                            st.metric(f"#{i+1} {bank_short}", f"{share:.1f}%")
+                    else:
+                        st.markdown(f"**Top {len(market_shares)} Participación**")
+                        for i, (bank, share) in enumerate(market_shares.items()):
+                            bank_short = bank[:15] + "..." if len(bank) > 15 else bank
+                            st.metric(f"#{i+1} {bank_short}", f"{share:.1f}%")
+            else:
+                st.warning("No se pudieron calcular métricas de concentración")
+        else:
+            st.warning("No se encontraron datos de activos para calcular concentración")
     
     st.markdown("---")
     
     # =========================================================
-    # 🏆 TOP PERFORMERS GENERALES
+    # TOP PERFORMERS GENERALES
     # =========================================================
-    st.subheader("🏆 Top Performers del Sistema (Todos los Indicadores)")
+    st.subheader("Top Performers del Sistema (Todos los Indicadores)")
     
     # Análisis de activos totales
     activos_data = df[df['nombre_del_indicador'] == 'TOTAL ACTIVO']
@@ -358,7 +439,7 @@ with tab_overview:
             st.plotly_chart(fig1, use_container_width=True)
         
         with col_metrics1:
-            st.markdown("**🥇 Top 3 Activos**")
+            st.markdown("**Top 3 Activos**")
             for i, (_, row) in enumerate(top_activos.head(3).iterrows()):
                 st.metric(
                     f"{i+1}. {row['banks'][:12]}",
@@ -387,7 +468,7 @@ with tab_overview:
             st.plotly_chart(fig2, use_container_width=True)
         
         with col_metrics2:
-            st.markdown("**📊 Top 3 ROE**")
+            st.markdown("**Top 3 ROE**")
             for i, (_, row) in enumerate(top_roe.head(3).iterrows()):
                 st.metric(
                     f"{i+1}. {row['banks'][:12]}",
@@ -400,7 +481,7 @@ with tab_overview:
     # =========================================================
     # 🏦 ANÁLISIS POR PEER GROUPS (OVERVIEW)
     # =========================================================
-    st.subheader("🏦 Distribución por Tamaño de Bancos")
+    st.subheader("Distribución por Tamaño de Bancos")
     
     peer_groups = TrendAnalysis.peer_group_analysis(df, size_metric='TOTAL ACTIVO')
     
@@ -422,7 +503,7 @@ with tab_overview:
             st.plotly_chart(fig_pie, use_container_width=True)
         
         with col_details:
-            st.markdown("**📋 Detalle por Grupo**")
+            st.markdown("**Detalle por Grupo**")
             for group_name, banks_list in peer_groups.items():
                 with st.expander(f"{group_name} ({len(banks_list)})"):
                     for bank in banks_list:
@@ -433,7 +514,7 @@ with tab_overview:
     # =========================================================
     # � PARTICIPACIÓN DE MERCADO
     # =========================================================
-    st.subheader("📊 Participación de Mercado por Métrica")
+    st.subheader(" Participación de Mercado por Métrica")
     
     market_participation = AdvancedMetrics.calculate_market_participation(df)
     
@@ -572,7 +653,7 @@ with tab_overview:
         indice_data = df[df['nombre_del_indicador'] == indice]
         
         if not indice_data.empty:
-            with st.expander(f"📊 {indice} - Ranking General"):
+            with st.expander(f" {indice} - Ranking General"):
                 # Ranking del índice
                 ranking_indice = indice_data.sort_values('valor_indicador', ascending=False).reset_index(drop=True)
                 
@@ -605,31 +686,26 @@ with tab_overview:
     # =========================================================
     # �🚨 ALERTAS GENERALES AL FINAL
     # =========================================================
-    st.subheader("🚨 Alertas Generales del Sistema")
-    
-    # Generar alertas automáticas
-    alerts = TrendAnalysis.generate_alerts(df)
-    alert_renderer = AlertRenderer()
-    alert_renderer.render_alerts_panel(alerts)
+    # Sección de alertas removida - disponible en análisis específico por banco
 
 # =========================================================
 # 🎯 TAB 2: ANÁLISIS POR CATEGORÍA ESPECÍFICA
 # =========================================================
 with tab_categoria:
-    st.header("🎯 Análisis por Categoría Específica")
+    st.header("Análisis por Categoría Específica")
     
     # Selector de categoría específico para este tab
     categoria = st.selectbox(
-        "📈 Selecciona Categoría de Análisis:",
+        "Selecciona Categoría de Análisis:",
         ["Balance", "Rendimiento", "Estructura", "Calidad_Riesgo", "Eficiencia", "Crecimiento"],
         help="Análisis detallado por tipo de indicadores"
     )
     
     # Mostrar info según categoría
     if categoria == "Balance":
-        st.info("💼 **Balance:** Activos y recursos del banco")
+        st.info("**Balance:** Activos y recursos del banco")
     elif categoria == "Rendimiento":
-        st.info("📊 **Rendimiento:** Rentabilidad y eficiencia")
+        st.info(" **Rendimiento:** Rentabilidad y eficiencia")
     elif categoria == "Estructura":
         st.info("🏗️ **Estructura:** Composición financiera")
     elif categoria == "Calidad_Riesgo":
@@ -639,24 +715,39 @@ with tab_categoria:
     elif categoria == "Crecimiento":
         st.info("📈 **Crecimiento:** Variaciones temporales")
     
-    # Cargar indicadores de la categoría
-    indicadores = load_indicators_list(categoria)
-    bancos = load_banks_list(categoria)
+    # Filtrar datos por categoría
+    # Obtener indicadores de la categoría seleccionada
+    indicator_names = IndicatorConfig.get_indicator_names_by_category(categoria)
     
-    if not indicadores:
-        st.error("No hay indicadores disponibles para esta categoría")
+    if not indicator_names:
+        st.error(f"No hay indicadores configurados para la categoría '{categoria}'")
         st.stop()
     
+    # Asegurar que dh tenga los datos cargados
+    if dh.dataframe is None:
+        dh.dataframe = df  # Usar los datos ya cargados
+    
+    # Filtrar datos usando el DataHandler
+    df_filtrado = dh.filter_by_category(indicator_names)
+    
+    if df_filtrado.empty:
+        st.error(f"No hay datos disponibles para la categoría '{categoria}'")
+        st.stop()
+    
+    # Obtener listas de bancos e indicadores de la categoría filtrada
     bancos = dh.get_unique_values(df_filtrado, "banks")
     indicadores = dh.get_unique_values(df_filtrado, "nombre_del_indicador")
     
     # =========================================================
-    # 📊 MÉTRICAS DE LA CATEGORÍA
+    #  MÉTRICAS DE LA CATEGORÍA
     # =========================================================
-    st.subheader(f"📊 Estadísticas de {categoria}")
+    st.subheader(f" Estadísticas de {categoria}")
     
     calc = MetricsCalculator()
     ui = UIComponents()
+    
+    # Configuración por defecto para métricas de categoría
+    is_percentage_default = False  # Para métricas generales de categoría
     
     total_bancos_cat = df_filtrado["banks"].nunique()
     total_indicadores_cat = len(IndicatorConfig.get_all_indicators_by_category(categoria))
@@ -669,7 +760,7 @@ with tab_categoria:
         total_indicadores=total_indicadores_cat,
         total_valor=total_valor_cat,
         promedio=promedio_cat,
-        is_percentage=is_percentage
+        is_percentage=is_percentage_default
     )
     
     st.markdown("---")
@@ -677,14 +768,24 @@ with tab_categoria:
     # =========================================================
     # 🏆 RANKINGS DINÁMICOS POR CATEGORÍA
     # =========================================================
-    st.subheader(f"🏆 Rankings Dinámicos - {categoria}")
+    st.subheader(f"Rankings Dinámicos - {categoria}")
     
     # Selector de indicador para ranking dinámico
     selected_indicator = st.selectbox(
-        "📊 Selecciona Indicador para Ranking:",
+        " Selecciona Indicador para Ranking:",
         indicadores,
         help="Elige qué indicador quieres analizar en el ranking"
     )
+    
+    # Configuración del indicador seleccionado
+    config = IndicatorConfig.get_indicator_info(selected_indicator)
+    if config:
+        is_percentage = config.get("is_percentage", False)
+        unit = config.get("unit", "")
+    else:
+        # Valores por defecto si no hay configuración
+        is_percentage = False
+        unit = ""
     
     # Obtener ranking dinámico
     ranking_df = dh.get_ranking(df_filtrado, selected_indicator, ascending=False)
@@ -727,7 +828,7 @@ with tab_categoria:
     # =========================================================
     # 📋 TABLA COMPARATIVA DE LA CATEGORÍA
     # =========================================================
-    st.subheader(f"📊 Matriz Comparativa - {categoria}")
+    st.subheader(f" Matriz Comparativa - {categoria}")
     
     # Crear tabla pivote dinámicamente
     indicator_order = [ind.name for ind in IndicatorConfig.get_all_indicators_by_category(categoria)]
@@ -799,7 +900,7 @@ with tab_categoria:
 # 🏦 TAB 3: ANÁLISIS ESPECÍFICO POR BANCO
 # =========================================================
 with tab_especifico:
-    st.header("🏦 Análisis Específico por Banco")
+    st.header("Análisis Específico por Banco")
     st.markdown("**Análisis individual detallado con comparaciones específicas**")
     
     # Selector de banco
@@ -822,34 +923,34 @@ with tab_especifico:
         ui = UIComponents()
         
         # =========================================================
-        # 📊 RESUMEN EJECUTIVO DEL BANCO SELECCIONADO
+        #  RESUMEN EJECUTIVO DEL BANCO SELECCIONADO
         # =========================================================
-        st.subheader(f"📊 Resumen Ejecutivo: {selected_bank}")
+        st.subheader(f" Resumen Ejecutivo: {selected_bank}")
         
         # Métricas principales del banco seleccionado
         col_bank1, col_bank2, col_bank3, col_bank4 = st.columns(4)
         
         with col_bank1:
             total_indicators_bank = bank_df["nombre_del_indicador"].nunique()
-            st.metric("📊 Indicadores Disponibles", total_indicators_bank)
+            st.metric(" Indicadores Disponibles", total_indicators_bank)
         
         with col_bank2:
             # Activos totales del banco
             activos_bank = bank_df[bank_df['nombre_del_indicador'] == 'TOTAL ACTIVO']
             if not activos_bank.empty:
                 activo_valor = activos_bank['valor_indicador'].iloc[0]
-                st.metric("💰 Activos Totales", f"${activo_valor:,.0f}")
+                st.metric("Activos Totales", f"${activo_valor:,.0f}")
             else:
-                st.metric("💰 Activos Totales", "N/D")
+                st.metric("Activos Totales", "N/D")
         
         with col_bank3:
             # ROE del banco
             roe_bank = bank_df[bank_df['nombre_del_indicador'] == 'RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO']
             if not roe_bank.empty:
                 roe_valor = roe_bank['valor_indicador'].iloc[0]
-                st.metric("📈 ROE", f"{roe_valor:.2f}%")
+                st.metric("ROE", f"{roe_valor:.2f}%")
             else:
-                st.metric("📈 ROE", "N/D")
+                st.metric("ROE", "N/D")
         
         with col_bank4:
             # Posición en ranking por activos
@@ -857,18 +958,17 @@ with tab_especifico:
             if not ranking_activos.empty:
                 posicion = ranking_activos.reset_index(drop=True).index[ranking_activos['banks'] == selected_bank].tolist()
                 if posicion:
-                    st.metric("🏆 Posición por Activos", f"#{posicion[0] + 1}")
+                    st.metric("Posición por Activos", f"#{posicion[0] + 1}")
                 else:
-                    st.metric("🏆 Posición por Activos", "N/D")
+                    st.metric("Posición por Activos", "N/D")
             else:
-                st.metric("🏆 Posición por Activos", "N/D")
+                st.metric("Posición por Activos", "N/D")
         
         st.markdown("---")
         
         # =========================================================
         # 📈 ANÁLISIS FINANCIERO PROFESIONAL DEL BANCO
         # =========================================================
-        st.subheader(f"📈 Análisis Financiero Profesional: {selected_bank}")
         
         # Obtener todos los indicadores del banco
         bank_indicators = bank_df[['nombre_del_indicador', 'valor_indicador']].copy()
@@ -890,14 +990,14 @@ with tab_especifico:
                     ratio_solvencia = (patrimonio['valor_indicador'].iloc[0] / activos['valor_indicador'].iloc[0]) * 100
                     color = "normal" if ratio_solvencia >= 10 else "inverse"
                     st.metric(
-                        "🧱 Ratio de Solvencia",
+                        "Ratio de Solvencia",
                         f"{ratio_solvencia:.2f}%",
                         "Patrimonio/Activos",
                         delta_color=color
                     )
                     st.caption("✅ Ideal: ≥ 10% (Basilea)")
                 else:
-                    st.metric("🧱 Ratio de Solvencia", "N/D")
+                    st.metric("Ratio de Solvencia", "N/D")
             
             with col_solv2:
                 # Apalancamiento (Activos/Patrimonio)
@@ -905,22 +1005,22 @@ with tab_especifico:
                     apalancamiento = activos['valor_indicador'].iloc[0] / patrimonio['valor_indicador'].iloc[0]
                     color = "inverse" if apalancamiento < 12 else "normal"
                     st.metric(
-                        "⚖️ Apalancamiento",
+                        "Apalancamiento",
                         f"{apalancamiento:.1f}x",
                         "Activos/Patrimonio",
                         delta_color=color
                     )
                     st.caption("✅ Ideal: < 12x")
                 else:
-                    st.metric("⚖️ Apalancamiento", "N/D")
+                    st.metric("Apalancamiento", "N/D")
             
             with col_solv3:
                 # Indicador adicional de solidez si existe
                 solidez = bank_indicators[bank_indicators['nombre_del_indicador'].str.contains('PATRIMONIO', na=False)]
                 if len(solidez) > 1:
-                    st.metric("🏛️ Solidez Patrimonial", "Múltiples métricas", "Ver detalles abajo")
+                    st.metric("Solidez Patrimonial", "Múltiples métricas", "Ver detalles abajo")
                 else:
-                    st.metric("🏛️ Estado General", "Estable", "Basado en ratios")
+                    st.metric("Estado General", "Estable", "Basado en ratios")
         
         # =========================================================
         # 💧 INDICADORES DE LIQUIDEZ
@@ -939,40 +1039,40 @@ with tab_especifico:
                     ratio_liquidez = (fondos_disp['valor_indicador'].iloc[0] / obligaciones['valor_indicador'].iloc[0]) * 100
                     color = "normal" if ratio_liquidez >= 20 else "inverse"
                     st.metric(
-                        "💧 Ratio de Liquidez",
+                        "Ratio de Liquidez",
                         f"{ratio_liquidez:.2f}%",
                         "Fondos Disp./Obligaciones",
                         delta_color=color
                     )
                     st.caption("✅ Ideal: ≥ 20%")
                 else:
-                    st.metric("💧 Ratio de Liquidez", "N/D")
+                    st.metric("Ratio de Liquidez", "N/D")
             
             with col_liq2:
                 # Liquidez inmediata (si hay datos de activos líquidos)
                 if not fondos_disp.empty:
                     liquidez_abs = fondos_disp['valor_indicador'].iloc[0]
                     st.metric(
-                        "💰 Fondos Disponibles",
+                        "Fondos Disponibles",
                         f"${liquidez_abs:,.0f}",
                         "Liquidez absoluta"
                     )
-                    st.caption("💡 Dinero inmediatamente disponible")
+                    st.caption("Dinero inmediatamente disponible")
                 else:
-                    st.metric("💰 Fondos Disponibles", "N/D")
+                    st.metric("Fondos Disponibles", "N/D")
             
             with col_liq3:
                 # Ratio de activos líquidos si existe
                 if not activos.empty and not fondos_disp.empty:
                     ratio_activos_liq = (fondos_disp['valor_indicador'].iloc[0] / activos['valor_indicador'].iloc[0]) * 100
                     st.metric(
-                        "📊 % Activos Líquidos",
+                        " % Activos Líquidos",
                         f"{ratio_activos_liq:.2f}%",
                         "Fondos/Total Activos"
                     )
-                    st.caption("💡 Flexibilidad financiera")
+                    st.caption("Flexibilidad financiera")
                 else:
-                    st.metric("📊 % Activos Líquidos", "N/D")
+                    st.metric(" % Activos Líquidos", "N/D")
         
         # =========================================================
         # 💰 INDICADORES DE RENTABILIDAD
@@ -998,14 +1098,14 @@ with tab_especifico:
                         status = "Bajo"
                     
                     st.metric(
-                        "📈 ROE",
+                        "ROE",
                         f"{roe_val:.2f}%",
                         f"Estado: {status}",
                         delta_color=color
                     )
                     st.caption("✅ Ideal: 10-20%")
                 else:
-                    st.metric("📈 ROE", "N/D")
+                    st.metric("ROE", "N/D")
             
             with col_rent2:
                 # ROA (Return on Assets)
@@ -1023,14 +1123,14 @@ with tab_especifico:
                         status = "Bajo"
                     
                     st.metric(
-                        "📊 ROA",
+                        " ROA",
                         f"{roa_val:.2f}%",
                         f"Estado: {status}",
                         delta_color=color
                     )
                     st.caption("✅ Ideal: 0.5-2%")
                 else:
-                    st.metric("📊 ROA", "N/D")
+                    st.metric(" ROA", "N/D")
             
             with col_rent3:
                 # Margen de Intermediación si está disponible
@@ -1041,7 +1141,7 @@ with tab_especifico:
                         f"${margen_fin['valor_indicador'].iloc[0]:,.0f}",
                         "Ingresos netos"
                     )
-                    st.caption("💡 Capacidad de generar ingresos")
+                    st.caption("Capacidad de generar ingresos")
                 else:
                     # Calcular margen neto aproximado
                     resultados = bank_indicators[bank_indicators['nombre_del_indicador'].str.contains('RESULTADOS DEL EJERCICIO', na=False)]
@@ -1077,16 +1177,16 @@ with tab_especifico:
                         status = "Eficiente" if ef_ratio < 60 else "Ineficiente"
                         
                         st.metric(
-                            "🧮 Ratio de Eficiencia",
+                            "Ratio de Eficiencia",
                             f"{ef_ratio:.2f}%",
                             f"Estado: {status}",
                             delta_color=color
                         )
                         st.caption("✅ Ideal: < 60%")
                     else:
-                        st.metric("🧮 Ratio de Eficiencia", "N/D")
+                        st.metric("Ratio de Eficiencia", "N/D")
                 else:
-                    st.metric("🧮 Ratio de Eficiencia", "N/D")
+                    st.metric("Ratio de Eficiencia", "N/D")
             
             with col_ef2:
                 # Gastos Operacionales/Activos
@@ -1094,13 +1194,13 @@ with tab_especifico:
                 if not gastos_activos.empty:
                     ga_ratio = gastos_activos['valor_indicador'].iloc[0]
                     st.metric(
-                        "📊 Gastos/Activos",
+                        " Gastos/Activos",
                         f"{ga_ratio:.2f}%",
                         "Eficiencia de activos"
                     )
-                    st.caption("💡 Menor = más eficiente")
+                    st.caption("Menor = más eficiente")
                 else:
-                    st.metric("📊 Gastos/Activos", "N/D")
+                    st.metric(" Gastos/Activos", "N/D")
             
             with col_ef3:
                 # Productividad (si hay datos de empleados o sucursales)
@@ -1140,14 +1240,14 @@ with tab_especifico:
                         status = "Alto Riesgo"
                     
                     st.metric(
-                        "📉 Morosidad",
+                        "Morosidad",
                         f"{mor_val:.2f}%",
                         f"Riesgo: {status}",
                         delta_color=color
                     )
                     st.caption("✅ Ideal: < 3%")
                 else:
-                    st.metric("📉 Morosidad", "N/D")
+                    st.metric("Morosidad", "N/D")
             
             with col_risk2:
                 # Cobertura de Provisiones
@@ -1158,14 +1258,14 @@ with tab_especifico:
                     status = "Adecuada" if cob_val >= 100 else "Insuficiente"
                     
                     st.metric(
-                        "🛡️ Cobertura",
+                        "Cobertura",
                         f"{cob_val:.2f}%",
                         f"Estado: {status}",
                         delta_color=color
                     )
                     st.caption("✅ Ideal: ≥ 100%")
                 else:
-                    st.metric("🛡️ Cobertura", "N/D")
+                    st.metric("Cobertura", "N/D")
             
             with col_risk3:
                 # Calidad de Cartera (Cartera Neta vs Total)
@@ -1178,7 +1278,7 @@ with tab_especifico:
                     if not activos.empty:
                         concentracion_cartera = (cartera_valor / activos['valor_indicador'].iloc[0]) * 100
                         st.metric(
-                            "📊 Concentración Cartera",
+                            " Concentración Cartera",
                             f"{concentracion_cartera:.1f}%",
                             "Cartera/Activos"
                         )
@@ -1190,12 +1290,12 @@ with tab_especifico:
                             "Volumen crediticio"
                         )
                 else:
-                    st.metric("📊 Calidad Cartera", "N/D")
+                    st.metric(" Calidad Cartera", "N/D")
         
         # =========================================================
-        # 📊 INDICADORES DE CRECIMIENTO Y SOSTENIBILIDAD
+        #  INDICADORES DE CRECIMIENTO Y SOSTENIBILIDAD
         # =========================================================
-        with st.expander("📊 **Crecimiento y Sostenibilidad**", expanded=True):
+        with st.expander(" **🎯 Crecimiento y Sostenibilidad**", expanded=True):
             st.markdown("**Evaluación de crecimiento equilibrado y sostenibilidad a largo plazo**")
             
             col_grow1, col_grow2, col_grow3 = st.columns(3)
@@ -1218,14 +1318,14 @@ with tab_especifico:
                         color = "off"
                     
                     st.metric(
-                        "📏 Tamaño Relativo",
+                        "Tamaño Relativo",
                         f"{tamano_relativo:.0f}%",
                         f"vs mediana ({categoria_tam})",
                         delta_color=color
                     )
-                    st.caption("💡 Posición en el mercado")
+                    st.caption("Posición en el mercado")
                 else:
-                    st.metric("📏 Tamaño Relativo", "N/D")
+                    st.metric("Tamaño Relativo", "N/D")
             
             with col_grow2:
                 # Diversificación (ratio entre diferentes tipos de activos)
@@ -1240,14 +1340,14 @@ with tab_especifico:
                         color = "off"
                     
                     st.metric(
-                        "🎯 Enfoque Crediticio",
+                        "Enfoque Crediticio",
                         f"{diversificacion:.1f}%",
                         f"Diversificación: {status}",
                         delta_color=color
                     )
-                    st.caption("💡 Balance operativo")
+                    st.caption("Balance operativo")
                 else:
-                    st.metric("🎯 Enfoque Crediticio", "N/D")
+                    st.metric(" Enfoque Crediticio", "N/D")
             
             with col_grow3:
                 # Sustentabilidad (ROE/Morosidad ratio)
@@ -1265,14 +1365,14 @@ with tab_especifico:
                         color = "inverse"
                     
                     st.metric(
-                        "🌱 Sostenibilidad",
+                        "Sostenibilidad",
                         f"{sostenibilidad_ratio:.1f}x",
                         f"Capacidad: {status}",
                         delta_color=color
                     )
-                    st.caption("💡 ROE/Morosidad ratio")
+                    st.caption("ROE/Morosidad ratio")
                 else:
-                    st.metric("🌱 Sostenibilidad", "N/D")
+                    st.metric("Sostenibilidad", "N/D")
         
         st.markdown("---")
         
@@ -1343,7 +1443,7 @@ with tab_especifico:
                 st.plotly_chart(fig_benchmark, use_container_width=True)
             
             with col_analysis:
-                st.markdown("**📊 Análisis de Posición**")
+                st.markdown("** Análisis de Posición**")
                 
                 # Analizar fortalezas y debilidades
                 fortalezas = comparison_df[comparison_df['vs Promedio (%)'] > 5]
@@ -1360,7 +1460,7 @@ with tab_especifico:
                         st.write(f"• {row['Indicador'][:20]}...")
                 
                 if fortalezas.empty and debilidades.empty:
-                    st.info("📊 **Rendimiento equilibrado** con el sistema")
+                    st.info(" **Rendimiento equilibrado** con el sistema")
         
         st.markdown("---")
         
@@ -1421,9 +1521,9 @@ with tab_especifico:
             st.caption("💡 El banco muestra indicadores dentro de rangos aceptables")
 
 # =========================================================
-# 📊 PIE DE PÁGINA
+#  PIE DE PÁGINA
 # =========================================================
 st.markdown("---")
-st.caption("📊 Desarrollado por Grupo 5 — Proyecto Integrador 2025")
+st.caption(" Desarrollado por Grupo 5 — Proyecto Integrador 2025")
 st.caption("💡 Dashboard de Salud Financiera - Sistema Bancario Ecuatoriano")
 st.caption("📅 Datos: Superintendencia de Bancos - Septiembre 2025")
