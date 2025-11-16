@@ -25,6 +25,33 @@ KPI.
 
 ---
 
+## 🚀 DEPLOYMENT RÁPIDO
+
+### Opción 1: Script Automático
+```bash
+# Windows PowerShell
+./deploy.ps1
+
+# Linux/Mac
+chmod +x deploy.sh && ./deploy.sh
+```
+
+### Opción 2: Comandos Manuales
+```bash
+uv sync && uv run scripts/pipeline/main.py && uv run streamlit run scripts/visualizations/main.py
+```
+
+### Opción 3: Docker
+```bash
+docker build -t seminario-grupo5 .
+docker run -p 8000:8000 seminario-grupo5
+```
+
+> [!NOTE]
+> 📋 **Guía completa**: Ver [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) para instrucciones detalladas
+
+---
+
 # Guia del proyecto (local)
 
 Para el proyecto usamos un project mannager de python ``uv`` que ayuda con 

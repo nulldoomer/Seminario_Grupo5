@@ -314,7 +314,7 @@ class AdvancedMetrics:
                     lower_bound = Q1 - 1.5 * IQR
                     upper_bound = Q3 + 1.5 * IQR
                     
-                    outlier_banks = serie[(serie < lower_bound) | (serie > upper_bound)].index.tolist()#type:ignore
+                    outlier_banks = serie[(serie < lower_bound) | (serie > upper_bound)].index.tolist()
                 
                 elif method == 'zscore':
                     mean_val = serie.mean()
@@ -322,7 +322,7 @@ class AdvancedMetrics:
                     
                     if std_val > 0:
                         z_scores = np.abs((serie - mean_val) / std_val)
-                        outlier_banks = serie[z_scores > 2].index.tolist()  # |z| > 2 #type:ignore
+                        outlier_banks = serie[z_scores > 2].index.tolist()  # |z| > 2
             
             if outlier_banks:
                 outliers[column] = outlier_banks

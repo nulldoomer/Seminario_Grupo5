@@ -209,3 +209,53 @@ class ConcatDataframes(BaseEstimator, TransformerMixin):
 
         return X_final_dataframe
 
+
+# =========================================================
+# 🧹 FILTRO DE CATEGORÍAS BANCARIAS
+# =========================================================
+class FilterRealBanks(BaseEstimator, TransformerMixin):
+    """
+    Filtrar solo bancos reales, eliminar categorías de clasificación.
+    Estas categorías son agrupaciones de la Superintendencia de Bancos,
+    NO son instituciones bancarias individuales.
+    """
+
+    def fit(self, X: pd.DataFrame, y=None):
+        return self
+
+    def transform(self, X: pd.DataFrame):
+        X = X.copy()
+
+        # Categorías a excluir (NO son bancos individuales)
+        categories_to_exclude = {
+            'BANCA MÚLTIPLE',
+            'BANCOS PRIVADOS COMERCIALES', 
+            'BANCOS PRIVADOS CONSUMO',
+            'BANCOS PRIVADOS GRANDES',
+            'BANCOS PRIVADOS MEDIANOS', 
+            'BANCOS PRIVADOS MICROCRÉDITO',
+            'BANCOS PRIVADOS PEQUEÑOS',
+            'TOTAL BANCOS PRIVADOS'
+        }
+
+        # Verificar si existe la columna 'Banks'
+        if 'Banks' in X.columns:
+            initial_count = len(X)
+            initial_banks = X['Banks'].nunique()
+            
+            # Filtrar las categorías
+            X_filtered = X[~X['Banks'].isin(categories_to_exclude)].copy()
+            
+            final_count = len(X_filtered)
+            final_banks = X_filtered['Banks'].nunique()
+            
+            print(f"🧹 Filtro de categorías bancarias aplicado:")
+            print(f"   📊 Registros: {initial_count} → {final_count}")
+            print(f"   🏦 Entidades: {initial_banks} → {final_banks}")
+            print(f"   ❌ Categorías eliminadas: {initial_banks - final_banks}")
+            
+            return X_filtered
+        else:
+            print("⚠️ Columna 'Banks' no encontrada, devolviendo datos sin filtrar")
+            return X
+

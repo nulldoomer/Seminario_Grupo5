@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import financials_route
 from api.routes import advanced_analytics
+from api.routes import dashboard_support
 
 
 app = FastAPI(
@@ -30,14 +31,23 @@ app.add_middleware(
 def root():
     return {"message": "API funcionando"}
 
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "message": "Banking Health API - OK",
+        "version": "1.0.0"
+    }
+
 app.include_router(financials_route.router)
 app.include_router(advanced_analytics.router)
+app.include_router(dashboard_support.router)
 
 if __name__ == "__main__":
     import uvicorn
     
     print("Inciando API")
-    print("Documentación: https://bank-api-service-216433300622.us-central1.run.app/docs")
+    print("Documentación: http://localhost:8000/docs")
     
     uvicorn.run(
         "main:app",

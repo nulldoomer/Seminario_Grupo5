@@ -1,7 +1,15 @@
 from typing import Any, Dict, List, Optional
 import pandas as pd
 import streamlit as st
-from scripts.visualizations.data_loader import VisualizationDataLoader
+# Importación con manejo de errores para compatibilidad
+try:
+    from ..data_loader import VisualizationDataLoader
+except ImportError:
+    # Fallback para ejecución directa
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+    from data_loader import VisualizationDataLoader
 
 class DataHandler:
 

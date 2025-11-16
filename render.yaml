@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: seminario-grupo5-api
+    env: python
+    plan: free
+    buildCommand: uv sync && uv run scripts/pipeline/main.py
+    startCommand: uv run uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: PORT
+        value: 8000
+    healthCheckPath: /
+    scaling:
+      minInstances: 1
+      maxInstances: 1
