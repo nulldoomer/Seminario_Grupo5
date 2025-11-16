@@ -333,7 +333,7 @@ class AlertRenderer:
         st.markdown("### 🎯 **Análisis de Concentración del Mercado**")
         
         for metric, data in concentration_data.items():
-            with st.expander(f"📊 Concentración: {metric}"):
+            with st.expander(f" Concentración: {metric}"):
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:

@@ -42,13 +42,24 @@ class APIClient:
         except:
             pass
             
-        # 3. Detectar si estamos en producción (Streamlit Cloud, Railway, etc.)
+        # 3. Detectar si hay API local disponible
+        try:
+            import requests
+            local_response = requests.get("http://localhost:8000/health", timeout=2)
+            if local_response.status_code == 200:
+                print("API Local detectado - usando localhost:8000")
+                return "http://localhost:8000"
+        except:
+            pass
+            
+        # 4. Detectar si estamos en producción (Streamlit Cloud, Railway, etc.)
         if os.getenv("STREAMLIT_RUNTIME_ENV") == "cloud":
             # URL de producción por defecto
             return "https://bank-api-service-216433300622.us-central1.run.app"
             
-        # 4. Default local
-        return "http://127.0.0.1:8000"
+        # 5. Usar Google Cloud por defecto (en lugar de local)
+        # Esto permite que funcione incluso en desarrollo local
+        return "https://bank-api-service-216433300622.us-central1.run.app"
 
     def test_connection(self) -> Dict[str, Any]:
         """
@@ -77,7 +88,7 @@ class APIClient:
         except requests.exceptions.RequestException as e:
             return {
                 "connected": False,
-                "status": "🔴 Sin conexión",
+                "status": "Sin conexión",
                 "url": self.base_url,
                 "message": f"Error de conexión: {str(e)}"
             }
@@ -197,12 +208,12 @@ def get_api_client():
             connection_info = client.test_connection()
             if connection_info["connected"]:
                 st.sidebar.success(f"{connection_info['status']}")
-                st.sidebar.caption(f"🌐 {connection_info['url']}")
-                st.sidebar.caption(f"⚡ {connection_info['response_time']:.2f}s")
+                st.sidebar.caption(f"URL: {connection_info['url']}")
+                st.sidebar.caption(f"Tiempo: {connection_info['response_time']:.2f}s")
             else:
                 st.sidebar.error(f"{connection_info['status']}")
-                st.sidebar.caption(f"🌐 {connection_info['url']}")
-                st.sidebar.caption(f"💡 {connection_info['message']}")
+                st.sidebar.caption(f"URL: {connection_info['url']}")
+                st.sidebar.caption(f"Mensaje: {connection_info['message']}")
     except:
         pass
         

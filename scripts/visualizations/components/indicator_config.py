@@ -97,4 +97,30 @@ class IndicatorConfig:
     def get_category_unit(category_name):
 
         return "%" if category_name in ["Rendimiento", "Calidad_Riesgo", "Eficiencia", "Crecimiento"] else "$"
+    
+    # Obtener información específica de un indicador
+    @staticmethod
+    def get_indicator_info(indicator_name: str) -> dict:
+        """Obtiene la información de un indicador específico"""
+        all_indicators = IndicatorConfig.get_all_indicators()
+        
+        for category, indicators in all_indicators.items():
+            for indicator in indicators:
+                if indicator.name == indicator_name:
+                    return {
+                        "name": indicator.name,
+                        "category": indicator.category,
+                        "is_percentage": indicator.is_percentage,
+                        "unit": indicator.unit,
+                        "description": indicator.description
+                    }
+        
+        # Si no se encuentra, devolver valores por defecto
+        return {
+            "name": indicator_name,
+            "category": "Unknown",
+            "is_percentage": False,
+            "unit": "",
+            "description": indicator_name
+        }
         
