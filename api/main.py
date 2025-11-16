@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import financials_route
-from routes import advanced_analytics
-from routes import dashboard_support
+from api.routes import financials_route
+from api.routes import advanced_analytics
+from api.routes import dashboard_support
 
 
 app = FastAPI(
