@@ -1,0 +1,47 @@
+name: Deploy to Railway
+on:
+  push:
+    branches: [feature/visualizations-ss]
+  pull_request:
+    branches: [feature/visualizations-ss]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install uv
+      run: |
+        pip install uv
+        uv --version
+        
+    - name: Install dependencies
+      run: |
+        uv sync
+        
+    - name: Run ETL Pipeline
+      run: |
+        uv run scripts/pipeline/main.py
+        
+    - name: Verify output files
+      run: |
+        ls -la output/cleaned_data/
+        
+    - name: Test API endpoints (optional)
+      run: |
+        # uv run python -m pytest tests/ --verbose
+        echo "Tests would run here"
+        
+    - name: Deploy to Railway
+      if: github.ref == 'refs/heads/feature/visualizations-ss' && github.event_name == 'push'
+      run: |
+        echo "Deployment to Railway would happen here"
+        # Use Railway CLI or GitHub integration
