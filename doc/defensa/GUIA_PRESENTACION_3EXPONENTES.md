@@ -219,32 +219,6 @@ BOLETIN BANCOS SEPTIEMBRE 2025.xlsx
 ## 🎬 PRESENTACIÓN 2: EXPOSITOR 2 (10 minutos)
 ### ETL Pipeline en Detalle + FastAPI
 
-### Minuto 0-1: TRANSICIÓN Y REVISIÓN
-
-**Slide 1: Donde Estamos**
-
-"El Expositor 1 nos mostró la **visión general**. Ahora entraremos en el **motor técnico**."
-
-```
-✅ Contexto definido
-✅ Problema claro
-✅ Arquitectura establecida
-→ AHORA: Implementación técnica
-```
-
-**Slide 2: Las 3 Hojas Clave del Boletín**
-
-"De las 13+ hojas del boletín, el equipo seleccionó **estratégicamente 3**:"
-
-| Hoja | Indicadores | Propósito |
-|------|-------------|-----------|
-| **BALANCE** | 7 KPIs | Tamaño, composición de activos |
-| **COMPOS CART** | 5 KPIs | Estructura de carteras |
-| **INDICADORES** | 6 KPIs | Rendimiento y eficiencia |
-| **TOTAL** | **18 KPIs** | **Visión integral de salud financiera** |
-
-"Con 18 indicadores podemos evaluar 3 dimensiones: **Tamaño → Estructura → Rendimiento**"
-
 ---
 
 ### Minuto 1-4: ETL PIPELINE - DETALLE TÉCNICO
@@ -447,71 +421,6 @@ class Ranking(BaseModel):
     value: float
 ```
 
-**Slide 10: Endpoints Implementados**
-
-**Financials Route - Datos Financieros:**
-
-```python
-# 1. Obtener todos los KPIs de un banco
-GET /financials/bank/{bank_name}
-
-Ejemplo:
-GET /financials/bank/Pichincha
-
-Response:
-{
-  "bank": "Pichincha",
-  "kpis": {
-    "fondos": 1234567,
-    "inversiones": 500000,
-    "cartera": 2000000,
-    ...
-  }
-}
-
----
-
-# 2. Ranking de bancos por indicador
-GET /financials/ranking?kpi=ROE
-
-Ejemplo: ¿Cuáles son los bancos más rentables?
-
-Response:
-[
-  {"rank": 1, "bank": "Banco A", "roe": 18.5},
-  {"rank": 2, "bank": "Banco B", "roe": 16.2},
-  {"rank": 3, "bank": "Banco C", "roe": 14.8}
-]
-```
-
-**Advanced Analytics Route - Análisis Avanzado:**
-
-```python
-# 3. Detectar alertas automáticas
-GET /advanced/alerts
-
-Response:
-[
-  {
-    "bank": "Banco X",
-    "alert": "Morosidad > 3%",
-    "severity": "high"
-  }
-]
-
----
-
-# 4. Pronósticos simplificados
-GET /advanced/forecast?bank=Pichincha
-
-Response:
-{
-  "bank": "Pichincha",
-  "forecast_roe": 17.2,
-  "confidence": 0.85
-}
-```
-
 ---
 
 ### Minuto 7-9: DESPLIEGUE DEL PIPELINE Y API
@@ -567,10 +476,6 @@ URL pública: https://seminario.railway.app/docs
 ✅ **Pipeline Pattern para Reutilización**
 - Cada transformador independiente
 - Reproducible para nuevos períodos sin cambios
-
-✅ **Validación Automática**
-- Pydantic previene errores en API
-- Type hints = código más seguro
 
 ✅ **Documentación Automática**
 - Swagger/ReDoc se generan del código
