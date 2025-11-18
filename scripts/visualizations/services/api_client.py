@@ -1,7 +1,3 @@
-"""
-🔗 API Client para Dashboard Bancario
-Compatible con múltiples entornos
-"""
 import requests
 import pandas as pd
 import streamlit as st

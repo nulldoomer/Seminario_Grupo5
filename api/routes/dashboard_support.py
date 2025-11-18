@@ -1,7 +1,3 @@
-"""
-🔗 Dashboard Support Routes
-Rutas específicas para el dashboard que siguen la estructura requerida
-"""
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional, Dict, Any
 import sys

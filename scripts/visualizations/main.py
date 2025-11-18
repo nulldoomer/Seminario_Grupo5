@@ -27,9 +27,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================================================
-# CONFIGURACIÓN DE API (OPCIONAL)
-# =========================================================
 api_client = None
 api_connected = False
 

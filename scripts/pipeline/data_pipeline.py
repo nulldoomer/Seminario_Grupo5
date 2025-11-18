@@ -8,7 +8,7 @@ from data_processing import  (
     DropCodeColumn,
     RenameColumns,
     ConcatDataframes,
-    FilterRealBanks  # Nueva clase para filtrar bancos reales
+    FilterRealBanks  
 )
 
 class CleaningPipeline:
@@ -21,7 +21,8 @@ class CleaningPipeline:
         cleaning_pipe = Pipeline([
             ("blank_column_dropper", DropBlankColumns()),
             ("row_dropper", DropRowsWithoutValues()),
-            ("tidy_formatter", MeltBanksIndicatorsAndValues())
+            ("tidy_formatter", MeltBanksIndicatorsAndValues()),
+            ("real_banks_filter", FilterRealBanks())
         ])
 
         transformed_dataframe = cleaning_pipe.fit_transform(dataframe)
@@ -79,9 +80,7 @@ class ConcatDataframesPipeline:
         return transformed_dataframe
 
 
-# =========================================================
-# 🧹 PIPELINE DE FILTRADO DE BANCOS REALES
-# =========================================================
+# PIPELINE DE FILTRADO DE BANCOS REALES
 class BankFilterPipeline:
     """Pipeline para filtrar categorías bancarias y dejar solo bancos reales"""
     
@@ -92,7 +91,6 @@ class BankFilterPipeline:
         print("\n🧹 Aplicando filtro de bancos reales...")
         
         filter_pipe = Pipeline([
-            ("real_banks_filter", FilterRealBanks())
         ])
         
         filtered_dataframe = filter_pipe.fit_transform(dataframe)

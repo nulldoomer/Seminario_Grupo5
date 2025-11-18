@@ -210,9 +210,7 @@ class ConcatDataframes(BaseEstimator, TransformerMixin):
         return X_final_dataframe
 
 
-# =========================================================
-# 🧹 FILTRO DE CATEGORÍAS BANCARIAS
-# =========================================================
+# FILTRO DE CATEGORÍAS BANCARIAS
 class FilterRealBanks(BaseEstimator, TransformerMixin):
     """
     Filtrar solo bancos reales, eliminar categorías de clasificación.
@@ -244,18 +242,18 @@ class FilterRealBanks(BaseEstimator, TransformerMixin):
             initial_banks = X['Banks'].nunique()
             
             # Filtrar las categorías
-            X_filtered = X[~X['Banks'].isin(categories_to_exclude)].copy()
+            X_filtered = X[~X['Banks'].isin(categories_to_exclude)].copy() #type:ignore
             
             final_count = len(X_filtered)
-            final_banks = X_filtered['Banks'].nunique()
+            final_banks = X_filtered['Banks'].nunique()#type:ignore
             
-            print(f"🧹 Filtro de categorías bancarias aplicado:")
-            print(f"   📊 Registros: {initial_count} → {final_count}")
-            print(f"   🏦 Entidades: {initial_banks} → {final_banks}")
-            print(f"   ❌ Categorías eliminadas: {initial_banks - final_banks}")
+            print(f"Filtro de categorías bancarias aplicado:")
+            print(f"   Registros: {initial_count} → {final_count}")
+            print(f"   Entidades: {initial_banks} → {final_banks}")
+            print(f"   Categorías eliminadas: {initial_banks - final_banks}")
             
             return X_filtered
         else:
-            print("⚠️ Columna 'Banks' no encontrada, devolviendo datos sin filtrar")
+            print("Columna 'Banks' no encontrada, devolviendo datos sin filtrar")
             return X
 

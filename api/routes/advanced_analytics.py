@@ -42,9 +42,7 @@ else:
     print("❌ Error: No se pudieron cargar los datos")
 
 
-# =========================================================
 # ENDPOINT 1: Generar Alertas del Sistema
-# =========================================================
 @router.get("/alerts", response_model=AlertsResponse)
 def get_system_alerts(
     severity: Optional[str] = Query(None, description="Filtrar por severidad: CRITICA, ALTA, MEDIA")
@@ -90,9 +88,7 @@ def get_system_alerts(
     }
 
 
-# =========================================================
 # ENDPOINT 2: Análisis de Concentración de Mercado
-# =========================================================
 @router.get("/concentration", response_model=ConcentrationResponse)
 def get_market_concentration(
     metric: str = Query("TOTAL ACTIVO", description="Métrica para análisis de concentración")
@@ -139,9 +135,7 @@ def get_market_concentration(
     }
 
 
-# =========================================================
 # ENDPOINT 3: Peer Groups (Grupos de Bancos)
-# =========================================================
 @router.get("/peer-groups", response_model=PeerGroupResponse)
 def get_peer_groups(
     size_metric: str = Query("TOTAL ACTIVO", description="Métrica para clasificar tamaño")
@@ -174,9 +168,7 @@ def get_peer_groups(
     }
 
 
-# =========================================================
 # ENDPOINT 4: Análisis de Correlaciones
-# =========================================================
 @router.get("/correlations", response_model=CorrelationResponse)
 def get_correlations():
     """
@@ -225,9 +217,7 @@ def get_correlations():
     }
 
 
-# =========================================================
 # ENDPOINT 5: Benchmark Analysis
-# =========================================================
 @router.get("/benchmark/{bank_name}", response_model=BenchmarkResponse)
 def get_benchmark_analysis(
     bank_name: str,
@@ -278,9 +268,7 @@ def get_benchmark_analysis(
     }
 
 
-# =========================================================
 # ENDPOINT 6: Indicadores Derivados
-# =========================================================
 @router.get("/derived-indicators", response_model=DerivedIndicatorsResponse)
 def get_derived_indicators(
     bank_name: Optional[str] = Query(None, description="Filtrar por banco específico")
@@ -342,9 +330,7 @@ def get_derived_indicators(
     }
 
 
-# =========================================================
 # ENDPOINT 7: Estadísticas del Sistema
-# =========================================================
 @router.get("/system-statistics", response_model=SystemStatisticsResponse)
 def get_system_statistics():
     """
@@ -379,9 +365,7 @@ def get_system_statistics():
     }
 
 
-# =========================================================
 # ENDPOINT 8: Participación de Mercado
-# =========================================================
 @router.get("/market-share")
 def get_market_share(
     metric: str = Query("TOTAL ACTIVO", description="Métrica para calcular participación"),
@@ -422,9 +406,7 @@ def get_market_share(
     }
 
 
-# =========================================================
 # ENDPOINT 9: Outliers Detection
-# =========================================================
 @router.get("/outliers")
 def detect_outliers(
     method: str = Query("iqr", description="Método: iqr o zscore"),
@@ -476,9 +458,7 @@ def detect_outliers(
     }
 
 
-# =========================================================
 # ENDPOINT 10: Overview General del Sistema
-# =========================================================
 @router.get("/overview")
 def get_system_overview():
     """

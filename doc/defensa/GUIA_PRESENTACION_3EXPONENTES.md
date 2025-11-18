@@ -255,19 +255,13 @@ class DropRowsWithoutValues(BaseEstimator, TransformerMixin):
     """Elimina filas vacías"""
 
 class MeltBanksIndicatorsAndValues(BaseEstimator, TransformerMixin):
-    """TRANSFORMA datos Wide → Long (CLAVE)"""
+    """TRANSFORMA datos Wide → Long"""
 
 class RenameColumns(BaseEstimator, TransformerMixin):
     """Estandariza nombres de columnas"""
 
-class RemovePercentageSymbol(BaseEstimator, TransformerMixin):
-    """Convierte "25%" → 25.0"""
-
-class ConvertToNumeric(BaseEstimator, TransformerMixin):
-    """Type casting: string → float64"""
-
-class HandleMissingValues(BaseEstimator, TransformerMixin):
-    """Imputa o elimina NaN"""
+class TakePriorRows(BaseEstimator, TransformerMixin):
+    """Toma los valores claves"""
 ```
 
 **¿Por qué Pipeline Pattern?**

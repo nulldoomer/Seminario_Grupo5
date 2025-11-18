@@ -1,7 +1,3 @@
-"""
-🚀 API Híbrido para Dashboard Bancario
-API que usa datos reales del dataset cuando está disponible
-"""
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional

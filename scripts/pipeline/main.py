@@ -6,8 +6,7 @@ from data_pipeline import (
     CleaningPipeline,
     BalanceCleaningPipeline,
     MatchColumnsPipeline,
-    ConcatDataframesPipeline,
-    BankFilterPipeline  # Nueva clase para filtrar bancos reales
+    ConcatDataframesPipeline
 )
 
 def main():
@@ -20,7 +19,6 @@ def main():
     balance_pipeline = BalanceCleaningPipeline()
     match_pipeline = MatchColumnsPipeline()
     concat_pipeline = ConcatDataframesPipeline()
-    bank_filter = BankFilterPipeline()  # Nueva instancia para filtrar bancos
     data_saver = SaveCleanData()
     dataset_name = "dataset"
 
@@ -63,15 +61,9 @@ def main():
         print(concat_dataframe.head(5))
         print(f"Shape después de concatenar: {concat_dataframe.shape}")
 
-        # 🧹 NUEVO: Aplicar filtro de bancos reales
-        filtered_dataframe = bank_filter.filter(concat_dataframe)
-
-        print("Resultado final después del filtro:")
-        print(filtered_dataframe.head(5))
-        print(f"Shape final: {filtered_dataframe.shape}")
         
         # Guardar el dataframe filtrado
-        data_saver.save(filtered_dataframe, "Final Dataframe")
+        data_saver.save(concat_dataframe, "Final Dataframe")
 
     except FileNotFoundError as e:
 
