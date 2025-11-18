@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import financials_route
 from api.routes import advanced_analytics
 from api.routes import dashboard_support
 
@@ -39,7 +38,6 @@ def health():
         "version": "1.0.0"
     }
 
-app.include_router(financials_route.router)
 app.include_router(advanced_analytics.router)
 app.include_router(dashboard_support.router)
 

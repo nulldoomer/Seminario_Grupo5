@@ -10,15 +10,11 @@ class APIClient:
         Inicializar cliente API con detección automática de entorno
         
         Args:
-            base_url: URL base del API. Si no se provee, usa variables de entorno o default local
+            base_url: URL base del API. Si no se provee, usa variables de entorno o default
         """
         if base_url:
             self.base_url = base_url
         else:
-            # Prioridad de configuración:
-            # 1. Variable de entorno API_URL
-            # 2. Streamlit secrets (para deployment)
-            # 3. Default local
             self.base_url = self._get_api_url()
             
         self.session = requests.Session()
@@ -31,74 +27,65 @@ class APIClient:
         if os.getenv("API_URL"):
             return os.getenv("API_URL")
             
-        # 2. Streamlit secrets (para deployment)
+        # 2. Streamlit secrets
         try:
             if hasattr(st, "secrets") and "api_url" in st.secrets:
                 return st.secrets["api_url"]
         except:
             pass
             
-        # 3. Detectar si hay API local disponible
+        # 3. Detectar API local
         try:
-            import requests
             local_response = requests.get("http://localhost:8000/health", timeout=2)
             if local_response.status_code == 200:
-                print("API Local detectado - usando localhost:8000")
                 return "http://localhost:8000"
         except:
             pass
             
-        # 4. Detectar si estamos en producción (Streamlit Cloud, Railway, etc.)
+        # 4. Producción
         if os.getenv("STREAMLIT_RUNTIME_ENV") == "cloud":
-            # URL de producción por defecto
             return "https://bank-api-service-216433300622.us-central1.run.app"
             
-        # 5. Usar Google Cloud por defecto (en lugar de local)
-        # Esto permite que funcione incluso en desarrollo local
+        # 5. Default
         return "https://bank-api-service-216433300622.us-central1.run.app"
 
     def test_connection(self) -> Dict[str, Any]:
-        """
-        Probar la conexión al API
-        
-        Returns:
-            Dict con información sobre el estado de la conexión
-        """
+        """Probar la conexión al API"""
         try:
-            response = self.session.get(f"{self.base_url}/", timeout=5)
+            response = self.session.get(f"{self.base_url}/health", timeout=5)
             if response.status_code == 200:
                 return {
                     "connected": True,
-                    "status": "✅ Conectado",
+                    "status": "success",
                     "url": self.base_url,
-                    "response_time": response.elapsed.total_seconds(),
-                    "message": "API funcionando correctamente"
+                    "response_time": response.elapsed.total_seconds()
                 }
             else:
                 return {
                     "connected": False,
-                    "status": f"❌ Error {response.status_code}",
-                    "url": self.base_url,
-                    "message": f"API devolvió código {response.status_code}"
+                    "status": f"error_{response.status_code}",
+                    "url": self.base_url
                 }
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             return {
                 "connected": False,
-                "status": "Sin conexión",
-                "url": self.base_url,
-                "message": f"Error de conexión: {str(e)}"
+                "status": "no_connection",
+                "url": self.base_url
             }
 
-    def get_banks_list(self, categoria: str) -> List[str]:
+    # =====================================================
+    # MÉTODOS BÁSICOS (ya existentes)
+    # =====================================================
+    
+    def get_banks_list(self, categoria: str = "Balance") -> Dict[str, Any]:
         """Obtener lista de bancos"""
         try:
             response = self.session.get(f"{self.base_url}/api/banks/list")
             if response.status_code == 200:
-                data = response.json()
-                return data.get("banks", [])
+                return response.json()
         except Exception as e:
-            st.error(f"Error cargando bancos: {e}")
-            return []
+            print(f"Error cargando bancos: {e}")
+        return {"banks": []}
 
     def get_indicators_list(self, categoria: str) -> Dict[str, Any]:
         """Obtener lista de indicadores por categoría"""
@@ -107,8 +94,8 @@ class APIClient:
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
-            st.error(f"Error cargando indicadores: {e}")
-            return {"indicators": [], "category": categoria}
+            print(f"Error cargando indicadores: {e}")
+        return {"indicators": [], "category": categoria}
 
     def get_bank_financials(self, bank_name: str, categoria: str) -> Optional[Dict]:
         """Obtener datos financieros de un banco específico"""
@@ -121,102 +108,268 @@ class APIClient:
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
-            st.error(f"Error cargando datos del banco: {e}")
+            print(f"Error cargando datos del banco: {e}")
         return None
 
-    def get_ranking(self, indicator: str, categoria: str, limit: Optional[int] = None) -> Optional[Dict]:
-        """Obtener ranking de bancos por indicador"""
+    # =====================================================
+    # MÉTODOS AVANZADOS - ANALYTICS
+    # =====================================================
+    
+    def get_system_overview(self) -> Optional[Dict]:
+        """
+        Obtener resumen ejecutivo del sistema bancario
+        
+        Returns:
+            Dict con estadísticas generales, concentración, alertas y top performers
+        """
         try:
-            params = {"categoria": categoria}
-            if limit:
-                params["limit"] = limit
-                
+            response = self.session.get(f"{self.base_url}/advanced/overview")
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Error obteniendo overview: {e}")
+        return None
+    
+    def get_system_alerts(self, severity: Optional[str] = None) -> Optional[Dict]:
+        """
+        Obtener alertas del sistema
+        
+        Args:
+            severity: Filtrar por severidad (CRITICA, ALTA, MEDIA)
+            
+        Returns:
+            Dict con alertas categorizadas por severidad
+        """
+        try:
+            params = {"severity": severity} if severity else {}
             response = self.session.get(
-                f"{self.base_url}/api/rankings/{indicator}",
+                f"{self.base_url}/advanced/alerts",
                 params=params
             )
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
-            st.error(f"Error cargando ranking: {e}")
+            print(f"Error obteniendo alertas: {e}")
         return None
-
-    def get_comparative_table(self, categoria: str) -> Optional[Dict]:
-        """Obtener tabla comparativa"""
+    
+    def get_market_concentration(self, metric: str = "TOTAL ACTIVO") -> Optional[Dict]:
+        """
+        Obtener análisis de concentración de mercado
+        
+        Args:
+            metric: Métrica para calcular concentración
+            
+        Returns:
+            Dict con CR3, CR5, HHI y top bancos
+        """
         try:
-            params = {"categoria": categoria}
+            params = {"metric": metric}
             response = self.session.get(
-                f"{self.base_url}/api/comparative/table",
+                f"{self.base_url}/advanced/concentration",
                 params=params
             )
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
-            st.error(f"Error cargando tabla comparativa: {e}")
+            print(f"Error obteniendo concentración: {e}")
         return None
-
-    def get_comparative_statistics(self, categoria: str) -> Optional[Dict]:
-        """Obtener estadísticas comparativas"""
+    
+    def get_peer_groups(self, size_metric: str = "TOTAL ACTIVO") -> Optional[Dict]:
+        """
+        Obtener grupos de bancos por tamaño
+        
+        Args:
+            size_metric: Métrica para clasificar tamaño
+            
+        Returns:
+            Dict con grupos de bancos (Grandes, Medianos, Pequeños)
+        """
         try:
-            params = {"categoria": categoria}
+            params = {"size_metric": size_metric}
             response = self.session.get(
-                f"{self.base_url}/api/comparative/statistics",
+                f"{self.base_url}/advanced/peer-groups",
                 params=params
             )
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
-            st.error(f"Error cargando estadísticas: {e}")
+            print(f"Error obteniendo peer groups: {e}")
+        return None
+    
+    def get_correlations(self) -> Optional[Dict]:
+        """
+        Obtener matriz de correlación entre indicadores
+        
+        Returns:
+            Dict con matriz de correlación y correlaciones fuertes
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/advanced/correlations")
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Error obteniendo correlaciones: {e}")
+        return None
+    
+    def get_benchmark_analysis(self, bank_name: str, 
+                              benchmark_type: str = "system_average") -> Optional[Dict]:
+        """
+        Comparar banco contra benchmarks
+        
+        Args:
+            bank_name: Nombre del banco
+            benchmark_type: Tipo de benchmark (system_average, top_quartile, median)
+            
+        Returns:
+            Dict con comparaciones por indicador
+        """
+        try:
+            params = {"benchmark_type": benchmark_type}
+            response = self.session.get(
+                f"{self.base_url}/advanced/benchmark/{bank_name}",
+                params=params
+            )
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Error obteniendo benchmark: {e}")
+        return None
+    
+    def get_derived_indicators(self, bank_name: Optional[str] = None) -> Optional[Dict]:
+        """
+        Obtener indicadores derivados y compuestos
+        
+        Args:
+            bank_name: Filtrar por banco específico (opcional)
+            
+        Returns:
+            Dict con indicadores derivados e índices compuestos
+        """
+        try:
+            params = {"bank_name": bank_name} if bank_name else {}
+            response = self.session.get(
+                f"{self.base_url}/advanced/derived-indicators",
+                params=params
+            )
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Error obteniendo indicadores derivados: {e}")
+        return None
+    
+    def get_system_statistics(self) -> Optional[Dict]:
+        """
+        Obtener estadísticas detalladas del sistema
+        
+        Returns:
+            Dict con estadísticas por cada indicador
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/advanced/system-statistics")
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Error obteniendo estadísticas: {e}")
+        return None
+    
+    def get_market_share(self, metric: str = "TOTAL ACTIVO", 
+                        top_n: int = 10) -> Optional[Dict]:
+        """
+        Obtener participación de mercado
+        
+        Args:
+            metric: Métrica para calcular participación
+            top_n: Número de top bancos
+            
+        Returns:
+            Dict con participación de mercado
+        """
+        try:
+            params = {"metric": metric, "top_n": top_n}
+            response = self.session.get(
+                f"{self.base_url}/advanced/market-share",
+                params=params
+            )
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Error obteniendo market share: {e}")
+        return None
+    
+    def get_outliers(self, method: str = "iqr", 
+                    indicator: Optional[str] = None) -> Optional[Dict]:
+        """
+        Detectar outliers
+        
+        Args:
+            method: Método de detección (iqr o zscore)
+            indicator: Filtrar por indicador específico
+            
+        Returns:
+            Dict con outliers detectados
+        """
+        try:
+            params = {"method": method}
+            if indicator:
+                params["indicator"] = indicator
+            response = self.session.get(
+                f"{self.base_url}/advanced/outliers",
+                params=params
+            )
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"Error detectando outliers: {e}")
         return None
 
-    # Métodos de conversión de datos
-    def bank_data_to_dataframe(self, bank_response: Dict) -> pd.DataFrame:
-        """Convertir respuesta de bank financials a DataFrame"""
-        if "data" in bank_response:
-            return pd.DataFrame(bank_response["data"])
+    # =====================================================
+    # MÉTODOS DE CONVERSIÓN A DATAFRAME
+    # =====================================================
+    
+    def overview_to_dataframe(self, overview: Dict) -> Dict[str, pd.DataFrame]:
+        """Convertir overview a múltiples DataFrames"""
+        dfs = {}
+        
+        if "top_performers" in overview:
+            performers = overview["top_performers"]
+            if "by_assets" in performers:
+                dfs["top_by_assets"] = pd.DataFrame(performers["by_assets"])
+            if "by_roe" in performers:
+                dfs["top_by_roe"] = pd.DataFrame(performers["by_roe"])
+        
+        return dfs
+    
+    def concentration_to_dataframe(self, concentration: Dict) -> pd.DataFrame:
+        """Convertir datos de concentración a DataFrame"""
+        if "top_banks" in concentration:
+            return pd.DataFrame(concentration["top_banks"])
+        return pd.DataFrame()
+    
+    def correlation_to_dataframe(self, correlation: Dict) -> pd.DataFrame:
+        """Convertir matriz de correlación a DataFrame"""
+        if "correlation_matrix" in correlation:
+            return pd.DataFrame(correlation["correlation_matrix"])
+        return pd.DataFrame()
+    
+    def market_share_to_dataframe(self, market_share: Dict) -> pd.DataFrame:
+        """Convertir market share a DataFrame"""
+        if "market_share" in market_share:
+            return pd.DataFrame(market_share["market_share"])
         return pd.DataFrame()
 
-    def ranking_to_dataframe(self, ranking_response: Dict) -> pd.DataFrame:
-        """Convertir respuesta de ranking a DataFrame"""
-        if "data" in ranking_response:
-            return pd.DataFrame(ranking_response["data"])
-        return pd.DataFrame()
-
-    def comparative_to_dataframe(self, comparative_response: Dict) -> pd.DataFrame:
-        """Convertir respuesta comparativa a DataFrame"""
-        if "pivot_data" in comparative_response:
-            return pd.DataFrame(comparative_response["pivot_data"])
-        return pd.DataFrame()
 
 @st.cache_resource
-def get_api_client():
+def get_api_client() -> APIClient:
     """
-    Función principal para obtener cliente API
+    Función principal para obtener cliente API (cached)
     
     Returns:
         APIClient configurado para el entorno actual
     """
-    client = APIClient()
-    
-    # Mostrar información del entorno en el sidebar si es posible
-    try:
-        if hasattr(st, "sidebar"):
-            connection_info = client.test_connection()
-            if connection_info["connected"]:
-                st.sidebar.success(f"{connection_info['status']}")
-                st.sidebar.caption(f"URL: {connection_info['url']}")
-                st.sidebar.caption(f"Tiempo: {connection_info['response_time']:.2f}s")
-            else:
-                st.sidebar.error(f"{connection_info['status']}")
-                st.sidebar.caption(f"URL: {connection_info['url']}")
-                st.sidebar.caption(f"Mensaje: {connection_info['message']}")
-    except:
-        pass
-        
-    return client
+    return APIClient()
 
 
-def get_api_client_with_url(url: str):
+def get_api_client_with_url(url: str) -> APIClient:
     """
     Obtener cliente API con URL específica
     
